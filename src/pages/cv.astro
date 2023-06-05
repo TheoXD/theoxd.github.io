@@ -1,0 +1,202 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import TimeLineElement from "../components/cv/TimeLine.astro";
+import HorizontalCard from "../components/HorizontalCard.astro";
+
+import { getEntry } from 'astro:content';
+
+const proj1 = await getEntry('projects', 'proj1');
+const proj1a = await getEntry('projects', 'proj1a');
+const proj2 = await getEntry('projects', 'proj2');
+const proj5 = await getEntry('projects', 'proj5');
+const proj8 = await getEntry('projects', 'proj8');
+const projx1 = await getEntry('projects', 'projx1');
+
+const projx5 = await getEntry('projects', 'projx5');
+
+---
+
+<BaseLayout title="Theo\'s Resume">
+  <div class="mb-5">
+    <div class="text-3xl w-full font-bold">Theo Hallenius (🇸🇪)</div>
+  </div>
+
+  <div class="mb-10 text-justify">
+    I am a Blockchain/Software/Game developer but I consider myself a generalist as I can do pretty much anything. I got involved with blockchain since 2017 and have been working for several prominent blockchain projects. I co-founded several blockchain companies with varying levels of success and have gained management experience as well. I'm a big advocate for privacy and decentralization and I believe that blockchain is the future, assuming this industry can still be saved.
+  </div>
+
+  <div class="mb-5">
+    <div class="text-3xl w-full font-bold">Education</div>
+  </div>
+
+  <div class="time-line-container grid gap-4 mb-10">
+    <TimeLineElement
+      title="Studied Technical Artist"
+      subtitle="Sep 2015 to Jun 2017 at Blekinge Institute of Technology, Karlskrona, Sweden."
+    />
+    <TimeLineElement
+      title="Studied Civil Engineering in Game and Software development"
+      subtitle="Sep 2012 to Jun 2015 at Blekinge Institute of Technology, Karlskrona, Sweden."
+    />
+    <TimeLineElement
+      title="Studied Game Graphics and Animation"
+      subtitle="Sep 2009 to Jun 2012 at Törnströmska Gymnasiet in Karlskrona, Sweden. And no, the world didn't end by the time I graduated xD"
+    >
+      This was the first of it's kind education in Sweden and I was among the first students to get selected. Now it's considered a prestige education and student from all over Sweden apply to this school. I still remember that time I've written my own render farm in Python to use all 20+ Macs to render animations after school hours.
+      <HorizontalCard
+      title={projx5.data.title}
+      img={projx5.data.heroImage}
+      desc={projx5.data.description}
+      url={projx5.data.url}
+      badge={projx5.data.badge}
+    />
+    </TimeLineElement>
+  </div>
+
+  <div class="mb-5">
+    <div class="text-3xl w-full font-bold">Professional Experience</div>
+  </div>
+
+  <div class="time-line-container mb-10">
+    <TimeLineElement
+      title="⭐ Co-Founded Rhonix Labs FZE"
+      subtitle="From Nov 2022 to Apr 2023 at Rhonix Labs, UAE"
+    >
+      Co-Founded <a href="rhonix.io" target="_blank">Rhonix Labs FZE</a>, a Dubai company with a goal to keep the RChain technology alive and continue it's development in a middle of a crypto bloodbath. It now employs several key developers from the previous project and is working on completing the Scala client.
+      <HorizontalCard
+      title={proj1.data.title}
+      img={proj1.data.heroImage}
+      desc={proj1.data.description}
+      url={proj1.data.url}
+      badge={proj1.data.badge}
+    />
+    </TimeLineElement>
+
+    <TimeLineElement
+      title="⭐ Developer on Airspark project"
+      subtitle="From May 2022 to Aug 2022 at Tree of Wally Foundation"
+    >
+      I was working part time on <a href="https://airsprk.com" target="_blank">Airspark</a>. It's a NFT marketplace allowing to buy and sell time. Built for the RChain blockchain platform using Svelte and Ionic on frontend, and Keystone 6 on backend with typed GraphQL queries.
+      <HorizontalCard
+      title={proj2.data.title}
+      img={proj2.data.heroImage}
+      desc={proj2.data.description}
+      url={proj2.data.url}
+      badge={proj2.data.badge}
+    />
+    </TimeLineElement>
+
+    <TimeLineElement
+      title="⭐ Board of Directors at RChain Cooperative"
+      subtitle="From Nov 2021 to Aug 2022 at RChain Cooperative, Washington, USA"
+    >
+      In late 2021 I got elected by the membership to the Board of Directors at <a href="https://rchain.coop" target="_blank">RChain Cooperative</a>. RChain was a Layer 1 blockchain platform that was once valued at 870mln$ in marketcap. It had it's own smart contract programming language called Rholang that is concurrent and allows for object capability security. All board minutes are public and hosted on <a href="https://github.com/rchain/board" target="_blank">github</a>.
+      <HorizontalCard
+      title={proj1a.data.title}
+      img={proj1a.data.heroImage}
+      desc={proj1a.data.description}
+      url={proj1a.data.url}
+      badge={proj1a.data.badge}
+    />
+    </TimeLineElement>
+
+    <TimeLineElement
+      title="⭐ Software developer at RChain Publishing"
+      subtitle="From Aug 2021 to Aug 2022 at RChain Publishing, Washington, USA"
+    >
+      Software developer at <a href="https://r-pub.com" target="_blank">RChain Publishing</a> which was a subsidiary of <a href="https://rchain.coop" target="_blank">RChain Cooperative</a>. During that time I was working on an NFT marketplace, that then later evolved into RDrive.
+      <HorizontalCard
+      title={proj5.data.title}
+      img={proj5.data.heroImage}
+      desc={proj5.data.description}
+      url={proj5.data.url}
+      badge={proj5.data.badge}
+    />
+    </TimeLineElement>
+
+    <TimeLineElement
+      title="⭐ Gov.Committee member at RChain Cooperative"
+      subtitle="From Feb 2020 to Aug 2022 at RChain Cooperative, Washington, USA"
+    >
+      Joined Gov.Committee at <a href="https://rchain.coop" target="_blank">RChain Cooperative</a>. It was an advisory committee to the Board of Directors. 
+    </TimeLineElement>
+
+    <TimeLineElement
+      title="⭐ Mainnet validator on RChain mainnet network"
+      subtitle="From Feb 2020 to May 2022"
+    >
+      I was one of the first external validators running my own node on RChain mainnet network when it first launched. I got to do my own monitoring, securing and maintenance of the server.
+    </TimeLineElement>
+
+    <TimeLineElement
+    title="⭐ Plugin Developer on Enjin SDK for Godot"
+    subtitle="From Sep 2019 to Dec 2019 at Enjin Coin"
+    >
+      Plugin Developer at <a href="https://enjin.io" target="_blank">Enjin Coin</a>, a well known gaming blockchain project. I was working on a plugin for Godot game engine that would allow game developers to integrate blockchain into their games through the Trusted Platform API. I was mostly doing testing and code generation from schema.
+    </TimeLineElement>
+
+    <TimeLineElement
+    title="⭐ Game developer on CubeSpawn Maker"
+    subtitle="From July 2019 to Aug 2019 at Inner Q-ality LTD, UK"
+    >
+      Game developer at Inner Q-ality LTD on CubeSpawn Maker. It's a puzzle game with some RTS elements in it where you build a factory to solve a puzzle. I was working on the game logic, UI, music and art direction.
+      <HorizontalCard
+      title={proj8.data.title}
+      img={proj8.data.heroImage}
+      desc={proj8.data.description}
+      url={proj8.data.url}
+      badge={proj8.data.badge}
+    />
+    </TimeLineElement>
+
+    <TimeLineElement
+    title="⭐ Founded MyEtherSports S.R.L."
+    subtitle="On Nov 2017 at MyEtherSports S.R.L."
+    >
+      Founded <a href="https://myethersports.com" target="_blank">MyEtherSports S.R.L.</a> , a blockchain company specializing in sportsbetting. I've written a functioning betting platform in Solidity with it's own DAO governance and token. Mixing DAO with ICO was a novel idea at that time.
+      <HorizontalCard
+      title={projx1.data.title}
+      img={projx1.data.heroImage}
+      desc={projx1.data.description}
+      url={projx1.data.url}
+      badge={projx1.data.badge}
+    />
+    </TimeLineElement>
+
+    <TimeLineElement
+      title="⭐ System administrator at Godot Engine"
+      subtitle="From Sep 2015 to Feb 2016"
+    >
+      I got involved with <a href="https://godotengine.org" target="_blank">Godot Engine</a> when it was first announced, today it's the most popular Open Source game engine. I helped setup a new webpage and project management platform. At that time we chose to try out OpenProject which was written in Ruby on Rails. I had to write a converter to migrate PhpBB database to this platform, ended up migrating quite a lot including posts with working links.
+    </TimeLineElement>
+  </div>
+
+  <div class="mb-5">
+    <div class="text-3xl w-full font-bold">Skills</div>
+  </div>
+
+  <ul class="list-disc md:columns-5 columns-2 mx-6">
+    <li>🦀 Rust</li>
+    <li>Javascript</li>
+    <li>Typescript</li>
+    <li>Python</li>
+    <li>C/C++</li>
+    <li>Rholang</li>
+    <li>Solidity</li>
+    <li>Godot</li>
+    <li>Svelte</li>
+    <li>React </li>
+    <li>Ionic</li>
+    <li>Blender</li>
+    <li>Blockchain</li>
+    <li>Scala</li>
+    <li>Clip Studio</li>
+    <li>Substance Painter</li>
+  </ul>
+
+  <div class="mt-24 mb-24">
+    <a href="/TheoHallenius_CV6.pdf" target="_blank" class="btn ml-5">Download my CV as PDF</a>
+    <a href="/projects" target="_blank" class="btn btn-outline ml-5">See all my 💩 projects</a>
+  </div>
+
+</BaseLayout>

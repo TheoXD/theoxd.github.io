@@ -1,0 +1,31 @@
+{
+  "name": "theoxd.github.io",
+  "homepage": "http://theoxd.github.io",
+  "description": "",
+  "type": "module",
+  "version": "2.3.1",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "npx gh-pages -d dist",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/image": "^0.16.9",
+    "@astrojs/mdx": "^0.19.4",
+    "@astrojs/rss": "^2.4.3",
+    "@astrojs/sitemap": "^1.3.1",
+    "@astrojs/tailwind": "^3.1.3",
+    "astro": "^2.5.5",
+    "daisyui": "^2.51.6",
+    "dayjs": "^1.11.7",
+    "sharp": "^0.32.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.9",
+    "gh-pages": "^5.0.0"
+  }
+}

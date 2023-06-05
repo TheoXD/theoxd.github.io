@@ -1,0 +1,85 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import HorizontalCard from "../components/HorizontalCard.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+const nonDraftPosts = posts.filter((post) => !post.data.draft);
+
+const projects = (await getCollection('projects')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+const last_posts = nonDraftPosts.slice(0, 3);
+const last_projects = projects.slice(0, 5);
+---
+
+<BaseLayout>
+
+    <div class="pb-12 mt-5">
+      <div class="text-xl py-1"></div>
+      <div class="text-5xl font-bold">Theo Hallenius</div>
+      <div class="text-3xl py-3 font-bold">Multitalented Blockchain/Software Developer</div>
+      <div class="py-2">
+        <text class="mb-10 text-justify">
+          I am a Blockchain/Software/Game developer but I consider myself a generalist as I can do pretty much anything. I got involved with blockchain since 2017 and have been working for several prominent blockchain projects. I co-founded several blockchain companies with varying levels of success and have gained management experience as well. I'm a big advocate for privacy and decentralization and I believe that blockchain is the future, assuming this industry can still be saved.
+          </text
+        >
+      </div>
+      <div class="mt-8">
+        <a class="btn" href="https://www.linkedin.com/in/theo-hallenius/" target="_blank"> Let's connect!</a>
+        <a href="/cv" target="_blank" class="btn btn-outline ml-5">My CV</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="text-3xl w-full font-bold mb-2">My 💩 projects:</div>
+    </div>
+
+    {
+      last_projects.map((post) => (
+        <HorizontalCard
+          title={post.data.title}
+          img={post.data.heroImage}
+          desc={post.data.description}
+          url={"/projects/" + post.slug}
+          target="_self"
+          badge={post.data.badge}
+        />
+        <div class="divider my-0"></div>
+      ))
+    }
+
+    <div class="mt-5 mb-24">
+      <a href="/projects/" class="btn ml-5">See more cool 💩 </a>
+    </div>
+    
+  
+    <!-- 
+    <div>
+      <div class="text-3xl w-full font-bold mb-5 mt-10">Latest 💩 posts:</div>
+    </div>
+
+    {
+      last_posts.map((post) => (
+        <HorizontalCard
+          title={post.data.title}
+          img={post.data.heroImage}
+          desc={post.data.description}
+          url={"/blog/" + post.slug}
+          target="_self"
+          badge={post.data.badge}
+        />
+        <div class="divider my-0"></div>
+      ))
+    }
+
+  <div class="mt-5 mb-24">
+    <a href="/blog/" class="btn ml-5">Read more 💩 </a>
+  </div>
+-->
+
+</BaseLayout>
+
