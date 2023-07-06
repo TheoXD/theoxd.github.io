@@ -1,0 +1,144 @@
+---
+title: "Understanding Solidity Part 1: Project Setup"
+description: "The best way to understand something is to build it from scratch and we're about to do just that. You'll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀."
+pubDate: "Jule 6 2023"
+heroImage: "/tinysol_part1.png"
+draft: false
+---
+The best way to understand something is to build it from scratch and we're about to do just that. You'll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀.
+![J.F.Kennedy](/public/moon.jpg)
+The goal of this multi-part tutorial series is to run a simple Solidity contract that looks like this:
+```javascript
+contract flipper {
+    bool private value;
+
+    /// Constructor that initializes the `bool` value to the given `init_value`.
+    constructor(bool initvalue) {
+        value = initvalue;
+    }
+
+    /// A message that can be called on instantiated contracts.
+    /// This one flips the value of the stored `bool` from `true`
+    /// to `false` and vice versa.
+    function flip() public {
+        value = !value;
+    }
+
+    /// Simply returns the current value of our `bool`.
+    function get() public view returns (bool) {
+        return value;
+    }
+}
+```
+
+Hopefully by the end of this tutorial series you'll learn the inner workings of Solidity and Ethereum Virtual Machine (EVM) and be more proficient in Rust. Let's get rusty! 🦀
+
+> **Note**
+> If you need a fully functional Solidity parser and compiler to use in production this ain't it. If you need a fully featured parser I'd recommend to take a look at [Solang](https://github.com/hyperledger/solang/).
+> I'll try to keep the naming convention as close to Solang's as possible.
+
+# Project setup
+
+If you don't already have Rust toolchain installed, you can do so by going to https://www.rust-lang.org/tools/install and following the instructions there.
+
+Once you have Rust installed, you can begin by creating a new rust project:
+```bash
+cargo new tinysol --bin
+```
+This will create a new folder in your current directory called `tinysol` containing `Cargo.toml`. Open the project folder in [VSCode](https://code.visualstudio.com/) and let's get started:
+```bash
+cd tinysol
+code .
+```
+I'd also recommend installing the following extensions for VSCode:
+    ![rust-analyzer](/public/rust-analyzer.JPG)
+
+# Parser
+
+Parsing is a pre-processing step of converting readable source code into an [Abstract Syntax Tree (AST)](https://en.wikipedia.org/wiki/Abstract_syntax_tree). To parse solidity source code we'll need [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) which is a parser generator that can parse any context-free grammar. For this project we're going to use a crate called [rust-sitter](https://crates.io/crates/rust-sitter) to get started even faster, so let's not waste any time and add it to our dependencies in `Cargo.toml`:
+```toml 
+[dependencies]
+rust-sitter = "0.3.4"
+
+[build-dependencies]
+rust-sitter-tool = "0.3.4"
+```
+
+Now create a file in `src/` folder and rename it to `solidity.rs`. This is where our grammar will be populated.
+Let's start by defining our module with our entry node:
+```rust
+#[rust_sitter::grammar("solidity")]
+pub mod grammar {
+
+    #[rust_sitter::language]
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub struct SourceUnit;
+
+    // Grammar definitions go here
+}
+```
+> **Note**
+> Note that you can only annotate one struct with `#[rust_sitter::language]` and it has to be the entry node of your grammar, almost like a root node. In our case it's a struct called SourceUnit.
+
+Now we need to add a new file called `build.rs` to our project root and add the following code to it:
+```rust
+use std::path::PathBuf;
+
+fn main() {
+    println!("cargo:rerun-if-changed=src");
+    rust_sitter_tool::build_parsers(&PathBuf::from("src/solidity.rs"));
+}
+```
+This file will be automatically picked up by the toolchain and generate our tree-sitter parser for us as well as export the `parse` function.
+Now let's try to parse an empty .sol file and see if we get any errors.
+First, create a new `contracts` folder in our project root and create `empty.sol` file inside it.
+By now your project structure should look like this:
+![Project structure](/public/project.JPG)
+
+Add the following code to the top of your `main.rs` to import our newly created module:
+```rust
+pub mod solidity;
+use crate::solidity::grammar::{parse};
+```
+Finally, and add the following code to your main function:
+```rust
+fn main() {
+    let code = std::fs::read_to_string("./contracts/empty.sol").expect("Unable to read source file");
+    let parsed = parse(code.as_str());
+    println!("{:#?}", parsed);
+}
+```
+
+Now run `cargo run` in your terminal and you should see the following output:
+```bash
+Ok(
+    SourceUnit,
+)
+```
+
+Let's also add our first unit test right below our main function:
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_empty() {
+        let code = std::fs::read_to_string("./contracts/empty.sol").expect("Unable to read source file");
+        let parsed = parse(code.as_str());
+        assert!(parsed.is_ok());
+        assert_eq!(parsed.unwrap(), SourceUnit { parts: vec![] });
+    }
+}
+```
+If you run `cargo test` it should say:
+```bash
+running 1 test
+test tests::test_parse_empty ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+If everything displayed correctly without any errors - congratulations!🎉. The boring boilerplate part is now over and the fun part is about to begin!
+
+In the next tutorial we're going to finish the Solidity parser and try to parse our contract. Stay tuned!
