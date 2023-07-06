@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="lofi">
+  <head>
+    <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="generator" content="Astro v2.5.7">
+
+<!-- Primary Meta Tags -->
+<title>Understanding Solidity Part 1: Project Setup</title>
+<meta name="title" content="Understanding Solidity Part 1: Project Setup">
+<meta name="description" content="The best way to understand something is to build it from scratch and we're about to do just that. You'll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀.">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://astro-modern-personal-website.netlify.app/blog/understanding-solidity-part-1/">
+<meta property="og:title" content="Understanding Solidity Part 1: Project Setup">
+<meta property="og:description" content="The best way to understand something is to build it from scratch and we're about to do just that. You'll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀.">
+<meta property="og:image" content="https://astro-modern-personal-website.netlify.app/tinysol_part1.png">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://astro-modern-personal-website.netlify.app/blog/understanding-solidity-part-1/">
+<meta property="twitter:title" content="Understanding Solidity Part 1: Project Setup">
+<meta property="twitter:description" content="The best way to understand something is to build it from scratch and we're about to do just that. You'll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀.">
+<meta property="twitter:image" content="https://astro-modern-personal-website.netlify.app/tinysol_part1.png">
+  <link rel="stylesheet" href="/_astro/404.7f3b9285.css" />
+<link rel="stylesheet" href="/_astro/_slug_.af480368.css" /><script type="module">const s=document.getElementById("home"),o=document.getElementById("projects"),c=document.getElementById("services"),d=document.getElementById("store"),i=document.getElementById("blog"),l=document.getElementById("cv");var t=!0;const m=window.location.href,a=[o,c,d,i,l],n="bg-base-300";a.forEach(e=>{e?.id&&m.includes(e.id)&&(t=!1,e?.classList.add(n))});t&&s?.classList.add(n);
+</script></head>
+  <body>
+    <div class="bg-base-100 drawer drawer-mobile">
+      <input id="my-drawer" type="checkbox" class="drawer-toggle">
+      <div class="drawer-content flex flex-col bg-base-100">
+        <div class="sticky lg:hidden top-0 z-30 flex h-16 w-full justify-center bg-opacity-90 backdrop-blur transition-all duration-100 bg-base-100 text-base-content shadow-sm">
+  <div class="navbar">
+    <div class="navbar-start">
+      <label for="my-drawer" class="btn btn-square btn-ghost">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </label>
+    </div>
+    <div class="navbar-center">
+      <a class="btn btn-ghost normal-case text-xl" href="/">Theo Hallenius</a>
+    </div>
+    <div class="navbar-end"></div>
+  </div>
+</div>
+        <div class="md:flex md:justify-center">
+          <main class="p-6 pt-10 max-w-[900px]">
+            
+  <main class="md:flex md:justify-center">
+    <article class="prose prose-lg max-w-[750px] prose-img:mx-auto">
+      <img alt="Understanding Solidity Part 1: Project Setup" class="w-full mb-6" width="750" height="422" src="/_astro/tinysol_part1_ZoHL9g.webp" loading="lazy" decoding="async">
+      <h1 class="title my-2 text-4xl font-bold">Understanding Solidity Part 1: Project Setup</h1>
+      <time>Jul 6, 2023</time>
+      <br>
+      
+      
+      <div class="divider my-2"></div>
+      
+    <p>The best way to understand something is to build it from scratch and we’re about to do just that. You’ll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀.
+<img src="/public/moon.jpg" alt="J.F.Kennedy">
+The goal of this multi-part tutorial series is to run a simple Solidity contract that looks like this:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #E1E4E8">contract flipper {</span></span>
+<span class="line"><span style="color: #E1E4E8">    bool private value;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #6A737D">/// Constructor that initializes the `bool` value to the given `init_value`.</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #B392F0">constructor</span><span style="color: #E1E4E8">(bool initvalue) {</span></span>
+<span class="line"><span style="color: #E1E4E8">        value </span><span style="color: #F97583">=</span><span style="color: #E1E4E8"> initvalue;</span></span>
+<span class="line"><span style="color: #E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #6A737D">/// A message that can be called on instantiated contracts.</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #6A737D">/// This one flips the value of the stored `bool` from `true`</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #6A737D">/// to `false` and vice versa.</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #F97583">function</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">flip</span><span style="color: #E1E4E8">() </span><span style="color: #B392F0">public</span><span style="color: #E1E4E8"> {</span></span>
+<span class="line"><span style="color: #E1E4E8">        value </span><span style="color: #F97583">=</span><span style="color: #E1E4E8"> </span><span style="color: #F97583">!</span><span style="color: #E1E4E8">value;</span></span>
+<span class="line"><span style="color: #E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #6A737D">/// Simply returns the current value of our `bool`.</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #F97583">function</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">get</span><span style="color: #E1E4E8">() </span><span style="color: #B392F0">public</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">view</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">returns</span><span style="color: #E1E4E8"> (</span><span style="color: #FFAB70">bool</span><span style="color: #E1E4E8">) {</span></span>
+<span class="line"><span style="color: #E1E4E8">        </span><span style="color: #F97583">return</span><span style="color: #E1E4E8"> value;</span></span>
+<span class="line"><span style="color: #E1E4E8">    }</span></span>
+<span class="line"><span style="color: #E1E4E8">}</span></span></code></pre>
+<p>Hopefully by the end of this tutorial series you’ll learn the inner workings of Solidity and Ethereum Virtual Machine (EVM) and be more proficient in Rust. Let’s get rusty! 🦀</p>
+<blockquote>
+<p><strong>Note</strong>
+If you need a fully functional Solidity parser and compiler to use in production this ain’t it. If you need a fully featured parser I’d recommend to take a look at <a href="https://github.com/hyperledger/solang/">Solang</a>.
+I’ll try to keep the naming convention as close to Solang’s as possible.</p>
+</blockquote>
+<h1 id="project-setup">Project setup</h1>
+<p>If you don’t already have Rust toolchain installed, you can do so by going to <a href="https://www.rust-lang.org/tools/install">https://www.rust-lang.org/tools/install</a> and following the instructions there.</p>
+<p>Once you have Rust installed, you can begin by creating a new rust project:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #B392F0">cargo</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">new</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">tinysol</span><span style="color: #E1E4E8"> </span><span style="color: #79B8FF">--bin</span></span></code></pre>
+<p>This will create a new folder in your current directory called <code>tinysol</code> containing <code>Cargo.toml</code>. Open the project folder in <a href="https://code.visualstudio.com/">VSCode</a> and let’s get started:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #79B8FF">cd</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">tinysol</span></span>
+<span class="line"><span style="color: #B392F0">code</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">.</span></span></code></pre>
+<p>I’d also recommend installing the following extensions for VSCode:
+<img src="/public/rust-analyzer.JPG" alt="rust-analyzer"></p>
+<h1 id="parser">Parser</h1>
+<p>Parsing is a pre-processing step of converting readable source code into an <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree (AST)</a>. To parse solidity source code we’ll need <a href="https://tree-sitter.github.io/tree-sitter/">Tree-sitter</a> which is a parser generator that can parse any context-free grammar. For this project we’re going to use a crate called <a href="https://crates.io/crates/rust-sitter">rust-sitter</a> to get started even faster, so let’s not waste any time and add it to our dependencies in <code>Cargo.toml</code>:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #E1E4E8">[</span><span style="color: #B392F0">dependencies</span><span style="color: #E1E4E8">]</span></span>
+<span class="line"><span style="color: #E1E4E8">rust-sitter = </span><span style="color: #9ECBFF">"0.3.4"</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #E1E4E8">[</span><span style="color: #B392F0">build-dependencies</span><span style="color: #E1E4E8">]</span></span>
+<span class="line"><span style="color: #E1E4E8">rust-sitter-tool = </span><span style="color: #9ECBFF">"0.3.4"</span></span></code></pre>
+<p>Now create a file in <code>src/</code> folder and rename it to <code>solidity.rs</code>. This is where our grammar will be populated.
+Let’s start by defining our module with our entry node:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #E1E4E8">#[rust_sitter</span><span style="color: #F97583">::</span><span style="color: #E1E4E8">grammar(</span><span style="color: #9ECBFF">"solidity"</span><span style="color: #E1E4E8">)]</span></span>
+<span class="line"><span style="color: #F97583">pub</span><span style="color: #E1E4E8"> </span><span style="color: #F97583">mod</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">grammar</span><span style="color: #E1E4E8"> {</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #E1E4E8">    #[rust_sitter</span><span style="color: #F97583">::</span><span style="color: #E1E4E8">language]</span></span>
+<span class="line"><span style="color: #E1E4E8">    #[derive(</span><span style="color: #B392F0">PartialEq</span><span style="color: #E1E4E8">, </span><span style="color: #B392F0">Eq</span><span style="color: #E1E4E8">, </span><span style="color: #B392F0">Debug</span><span style="color: #E1E4E8">, </span><span style="color: #B392F0">Clone</span><span style="color: #E1E4E8">)]</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #F97583">pub</span><span style="color: #E1E4E8"> </span><span style="color: #F97583">struct</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">SourceUnit</span><span style="color: #E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #6A737D">    // Grammar definitions go here</span></span>
+<span class="line"><span style="color: #E1E4E8">}</span></span></code></pre>
+<blockquote>
+<p><strong>Note</strong>
+Note that you can only annotate one struct with <code>#[rust_sitter::language]</code> and it has to be the entry node of your grammar, almost like a root node. In our case it’s a struct called SourceUnit.</p>
+</blockquote>
+<p>Now we need to add a new file called <code>build.rs</code> to our project root and add the following code to it:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #F97583">use</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">std</span><span style="color: #F97583">::</span><span style="color: #B392F0">path</span><span style="color: #F97583">::</span><span style="color: #B392F0">PathBuf</span><span style="color: #E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #F97583">fn</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">main</span><span style="color: #E1E4E8">() {</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #B392F0">println!</span><span style="color: #E1E4E8">(</span><span style="color: #9ECBFF">"cargo:rerun-if-changed=src"</span><span style="color: #E1E4E8">);</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #B392F0">rust_sitter_tool</span><span style="color: #F97583">::</span><span style="color: #B392F0">build_parsers</span><span style="color: #E1E4E8">(</span><span style="color: #F97583">&#x26;</span><span style="color: #B392F0">PathBuf</span><span style="color: #F97583">::</span><span style="color: #B392F0">from</span><span style="color: #E1E4E8">(</span><span style="color: #9ECBFF">"src/solidity.rs"</span><span style="color: #E1E4E8">));</span></span>
+<span class="line"><span style="color: #E1E4E8">}</span></span></code></pre>
+<p>This file will be automatically picked up by the toolchain and generate our tree-sitter parser for us as well as export the <code>parse</code> function.
+Now let’s try to parse an empty .sol file and see if we get any errors.
+First, create a new <code>contracts</code> folder in our project root and create <code>empty.sol</code> file inside it.
+By now your project structure should look like this:
+<img src="/public/project.JPG" alt="Project structure"></p>
+<p>Add the following code to the top of your <code>main.rs</code> to import our newly created module:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #F97583">pub</span><span style="color: #E1E4E8"> </span><span style="color: #F97583">mod</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">solidity</span><span style="color: #E1E4E8">;</span></span>
+<span class="line"><span style="color: #F97583">use</span><span style="color: #E1E4E8"> </span><span style="color: #F97583">crate::</span><span style="color: #B392F0">solidity</span><span style="color: #F97583">::</span><span style="color: #B392F0">grammar</span><span style="color: #F97583">::</span><span style="color: #E1E4E8">{parse};</span></span></code></pre>
+<p>Finally, and add the following code to your main function:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #F97583">fn</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">main</span><span style="color: #E1E4E8">() {</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #F97583">let</span><span style="color: #E1E4E8"> code </span><span style="color: #F97583">=</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">std</span><span style="color: #F97583">::</span><span style="color: #B392F0">fs</span><span style="color: #F97583">::</span><span style="color: #B392F0">read_to_string</span><span style="color: #E1E4E8">(</span><span style="color: #9ECBFF">"./contracts/empty.sol"</span><span style="color: #E1E4E8">)</span><span style="color: #F97583">.</span><span style="color: #B392F0">expect</span><span style="color: #E1E4E8">(</span><span style="color: #9ECBFF">"Unable to read source file"</span><span style="color: #E1E4E8">);</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #F97583">let</span><span style="color: #E1E4E8"> parsed </span><span style="color: #F97583">=</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">parse</span><span style="color: #E1E4E8">(code</span><span style="color: #F97583">.</span><span style="color: #B392F0">as_str</span><span style="color: #E1E4E8">());</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #B392F0">println!</span><span style="color: #E1E4E8">(</span><span style="color: #9ECBFF">"{:#?}"</span><span style="color: #E1E4E8">, parsed);</span></span>
+<span class="line"><span style="color: #E1E4E8">}</span></span></code></pre>
+<p>Now run <code>cargo run</code> in your terminal and you should see the following output:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #B392F0">Ok(</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #B392F0">SourceUnit,</span></span>
+<span class="line"><span style="color: #E1E4E8">)</span></span></code></pre>
+<p>Let’s also add our first unit test right below our main function:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #E1E4E8">#[cfg(test)]</span></span>
+<span class="line"><span style="color: #F97583">mod</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">tests</span><span style="color: #E1E4E8"> {</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #F97583">use</span><span style="color: #E1E4E8"> </span><span style="color: #79B8FF">super</span><span style="color: #F97583">::*</span><span style="color: #E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #E1E4E8">    #[test]</span></span>
+<span class="line"><span style="color: #E1E4E8">    </span><span style="color: #F97583">fn</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">test_parse_empty</span><span style="color: #E1E4E8">() {</span></span>
+<span class="line"><span style="color: #E1E4E8">        </span><span style="color: #F97583">let</span><span style="color: #E1E4E8"> code </span><span style="color: #F97583">=</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">std</span><span style="color: #F97583">::</span><span style="color: #B392F0">fs</span><span style="color: #F97583">::</span><span style="color: #B392F0">read_to_string</span><span style="color: #E1E4E8">(</span><span style="color: #9ECBFF">"./contracts/empty.sol"</span><span style="color: #E1E4E8">)</span><span style="color: #F97583">.</span><span style="color: #B392F0">expect</span><span style="color: #E1E4E8">(</span><span style="color: #9ECBFF">"Unable to read source file"</span><span style="color: #E1E4E8">);</span></span>
+<span class="line"><span style="color: #E1E4E8">        </span><span style="color: #F97583">let</span><span style="color: #E1E4E8"> parsed </span><span style="color: #F97583">=</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">parse</span><span style="color: #E1E4E8">(code</span><span style="color: #F97583">.</span><span style="color: #B392F0">as_str</span><span style="color: #E1E4E8">());</span></span>
+<span class="line"><span style="color: #E1E4E8">        </span><span style="color: #B392F0">assert!</span><span style="color: #E1E4E8">(parsed</span><span style="color: #F97583">.</span><span style="color: #B392F0">is_ok</span><span style="color: #E1E4E8">());</span></span>
+<span class="line"><span style="color: #E1E4E8">        </span><span style="color: #B392F0">assert_eq!</span><span style="color: #E1E4E8">(parsed</span><span style="color: #F97583">.</span><span style="color: #B392F0">unwrap</span><span style="color: #E1E4E8">(), </span><span style="color: #B392F0">SourceUnit</span><span style="color: #E1E4E8"> { parts</span><span style="color: #F97583">:</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">vec!</span><span style="color: #E1E4E8">[] });</span></span>
+<span class="line"><span style="color: #E1E4E8">    }</span></span>
+<span class="line"><span style="color: #E1E4E8">}</span></span></code></pre>
+<p>If you run <code>cargo test</code> it should say:</p>
+<pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #B392F0">running</span><span style="color: #E1E4E8"> </span><span style="color: #79B8FF">1</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">test</span></span>
+<span class="line"><span style="color: #79B8FF">test</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">tests::test_parse_empty</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">...</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">ok</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #79B8FF">test</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">result:</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">ok.</span><span style="color: #E1E4E8"> </span><span style="color: #79B8FF">1</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">passed</span><span style="color: #E1E4E8">; </span><span style="color: #B392F0">0</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">failed</span><span style="color: #E1E4E8">; </span><span style="color: #B392F0">0</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">ignored</span><span style="color: #E1E4E8">; </span><span style="color: #B392F0">0</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">measured</span><span style="color: #E1E4E8">; </span><span style="color: #B392F0">0</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">filtered</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">out</span><span style="color: #E1E4E8">; </span><span style="color: #B392F0">finished</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">in</span><span style="color: #E1E4E8"> </span><span style="color: #79B8FF">0.00</span><span style="color: #9ECBFF">s</span></span></code></pre>
+<p>If everything displayed correctly without any errors - congratulations!🎉. The boring boilerplate part is now over and the fun part is about to begin!</p>
+<p>In the next tutorial we’re going to finish the Solidity parser and try to parse our contract. Stay tuned!</p>
+
+    </article>
+  </main>
+
+          </main>
+        </div>
+        <footer class="footer footer-center block mb-5 pt-10">
+  <div class="pb-2">
+    Copyright &copy; 2023 Theo Hallenius
+  </div>
+  <div class="inline opacity-75">
+    <!-- Thanks for using this template. Please keep this line to support my work :) -->
+    <a href="https://astro-modern-personal-website.netlify.app/" target="_blank" class="font-bold">Website Template</a> developed by
+    <a href="https://manuelernestog.github.io" target="_blank" class="font-bold">Manuel Ernesto ⚡️</a>
+  </div>
+</footer>
+      </div>
+      <div class="drawer-side bg-base-100">
+  <label for="my-drawer" class="drawer-overlay bg-base-100"></label>
+  <div class="menu flex flex-col flex-nowrap p-4 overflow-y-auto w-[20rem] bg-base-100 text-base-content">
+    <div class="w-fit">
+      <a href="/">
+        <div class="avatar transition ease-in-out w-1/2 hover:scale-[102%] block m-auto mt-3 mb-8 h-36">
+          <div>
+            <img class="mask mask-circle" alt="Profile image" width="300" height="300" src="/_astro/profile_Z1AnH13.webp" loading="lazy" decoding="async">
+          </div>
+          <h1 class="m-2 font-bold text-lg font-medium">Theo Hallenius</h1>
+        </div>
+        <p class="w-full text-center">Blockchain/Software Developer</p>
+      </a>
+    </div>
+
+
+    <ul class="grow shrink mt-6">
+      <!-- Sidebar content here -->
+      <li><a id="home" href="/">Home</a></li>
+      <li><a id="projects" href="/projects">Projects</a></li>
+      <li><a id="blog" href="/blog/">Blog</a></li>
+      <li><a id="cv" href="/cv">CV</a></li>
+      <li><a href="mailto:theo.hallenius@gmail.com" target="_blank" referrerpolicy="no-referrer-when-downgrade">Contact</a></li>
+    </ul>
+
+
+    <div class="social-icons px-4 my-2 flex self-center">
+      <!-- 
+      <a
+        href="https://www.artstation.com/theoxd"
+        target="_blank"
+        class="mx-3"
+        aria-label="Art Station"
+        title="Art Station"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          style="fill: currentColor;transform: ;msFilter:;"
+          ><path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M5 2h2v3H5zm4 0h2v3H9zm4 0h2v3h-2zm6 7h-2V7H3v11c0 1.654 1.346 3 3 3h8c1.654 0 3-1.346 3-3h2c1.103 0 2-.897 2-2v-5c0-1.103-.897-2-2-2zm-4 9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V9h10v9zm2-2v-5h2l.002 5H17z"
+          ></path></svg
+        >
+      </a>
+    -->
+      <a href="https://github.com/TheoXD" target="_blank" class="mx-3" aria-label="Github" title="Github">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: currentColor;transform: ;msFilter:;"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.026 2c-5.509 0-9.974 4.465-9.974 9.974 0 4.406 2.857 8.145 6.821 9.465.499.09.679-.217.679-.481 0-.237-.008-.865-.011-1.696-2.775.602-3.361-1.338-3.361-1.338-.452-1.152-1.107-1.459-1.107-1.459-.905-.619.069-.605.069-.605 1.002.07 1.527 1.028 1.527 1.028.89 1.524 2.336 1.084 2.902.829.091-.645.351-1.085.635-1.334-2.214-.251-4.542-1.107-4.542-4.93 0-1.087.389-1.979 1.024-2.675-.101-.253-.446-1.268.099-2.64 0 0 .837-.269 2.742 1.021a9.582 9.582 0 0 1 2.496-.336 9.554 9.554 0 0 1 2.496.336c1.906-1.291 2.742-1.021 2.742-1.021.545 1.372.203 2.387.099 2.64.64.696 1.024 1.587 1.024 2.675 0 3.833-2.33 4.675-4.552 4.922.355.308.675.916.675 1.846 0 1.334-.012 2.41-.012 2.737 0 .267.178.577.687.479C19.146 20.115 22 16.379 22 11.974 22 6.465 17.535 2 12.026 2z"></path>
+        </svg>
+      </a>
+      <a href="https://twitter.com/TheoHallenius" target="_blank" class="mx-3" aria-label="Twitter" title="Twitter">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: currentColor;transform: ;msFilter:;"><path d="M19.633 7.997c.013.175.013.349.013.523 0 5.325-4.053 11.461-11.46 11.461-2.282 0-4.402-.661-6.186-1.809.324.037.636.05.973.05a8.07 8.07 0 0 0 5.001-1.721 4.036 4.036 0 0 1-3.767-2.793c.249.037.499.062.761.062.361 0 .724-.05 1.061-.137a4.027 4.027 0 0 1-3.23-3.953v-.05c.537.299 1.16.486 1.82.511a4.022 4.022 0 0 1-1.796-3.354c0-.748.199-1.434.548-2.032a11.457 11.457 0 0 0 8.306 4.215c-.062-.3-.1-.611-.1-.923a4.026 4.026 0 0 1 4.028-4.028c1.16 0 2.207.486 2.943 1.272a7.957 7.957 0 0 0 2.556-.973 4.02 4.02 0 0 1-1.771 2.22 8.073 8.073 0 0 0 2.319-.624 8.645 8.645 0 0 1-2.019 2.083z"></path>
+        </svg>
+      </a>
+      <a href="https://www.linkedin.com/in/theo-hallenius/" target="_blank" class="mx-3" aria-label="Linkedin" title="Linkedin">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: currentColor;transform: ;msFilter:;"><circle cx="4.983" cy="5.009" r="2.188"></circle><path d="M9.237 8.855v12.139h3.769v-6.003c0-1.584.298-3.118 2.262-3.118 1.937 0 1.961 1.811 1.961 3.218v5.904H21v-6.657c0-3.27-.704-5.783-4.526-5.783-1.835 0-3.065 1.007-3.568 1.96h-.051v-1.66H9.237zm-6.142 0H6.87v12.139H3.095z"></path>
+        </svg>
+      </a>
+
+      <a href="/rss.xml" target="_blank" class="mx-3" aria-label="RSS Feed" title="RSS Feed">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: currentColor;transform: ;msFilter:;"><path d="M19 20.001C19 11.729 12.271 5 4 5v2c7.168 0 13 5.832 13 13.001h2z"></path><path d="M12 20.001h2C14 14.486 9.514 10 4 10v2c4.411 0 8 3.589 8 8.001z"></path><circle cx="6" cy="18" r="2"></circle>
+        </svg>
+      </a>
+    </div>
+  </div>
+</div>
+    </div>
+
+    <div class="fixed bottom-0 right-0 w-1/6">
+      <img src="/signature2.png" alt="overlay">
+    </div>
+    
+  </body></html>
