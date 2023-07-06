@@ -121,6 +121,7 @@ Let's also add our first unit test right below our main function:
 #[cfg(test)]
 mod tests {
     use super::*;
+    use solidity::grammar::{SourceUnit};
 
     #[test]
     fn test_parse_empty() {
