@@ -59,7 +59,7 @@
       <div class="divider my-2"></div>
       
     <p>The best way to understand something is to build it from scratch and we’re about to do just that. You’ll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀.
-<img src="/public/moon.jpg" alt="J.F.Kennedy">
+<img src="/moon.jpg" alt="J.F.Kennedy">
 The goal of this multi-part tutorial series is to run a simple Solidity contract that looks like this:</p>
 <pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #E1E4E8">contract flipper {</span></span>
 <span class="line"><span style="color: #E1E4E8">    bool private value;</span></span>
@@ -95,7 +95,7 @@ I’ll try to keep the naming convention as close to Solang’s as possible.</p>
 <pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #79B8FF">cd</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">tinysol</span></span>
 <span class="line"><span style="color: #B392F0">code</span><span style="color: #E1E4E8"> </span><span style="color: #9ECBFF">.</span></span></code></pre>
 <p>I’d also recommend installing the following extensions for VSCode:
-<img src="/public/rust-analyzer.JPG" alt="rust-analyzer"></p>
+<img src="/rust-analyzer.JPG" alt="rust-analyzer"></p>
 <h1 id="parser">Parser</h1>
 <p>Parsing is a pre-processing step of converting readable source code into an <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree (AST)</a>. To parse solidity source code we’ll need <a href="https://tree-sitter.github.io/tree-sitter/">Tree-sitter</a> which is a parser generator that can parse any context-free grammar. For this project we’re going to use a crate called <a href="https://crates.io/crates/rust-sitter">rust-sitter</a> to get started even faster, so let’s not waste any time and add it to our dependencies in <code>Cargo.toml</code>:</p>
 <pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #E1E4E8">[</span><span style="color: #B392F0">dependencies</span><span style="color: #E1E4E8">]</span></span>
@@ -129,7 +129,7 @@ Note that you can only annotate one struct with <code>#[rust_sitter::language]</
 Now let’s try to parse an empty .sol file and see if we get any errors.
 First, create a new <code>contracts</code> folder in our project root and create <code>empty.sol</code> file inside it.
 By now your project structure should look like this:
-<img src="/public/project.JPG" alt="Project structure"></p>
+<img src="/project.JPG" alt="Project structure"></p>
 <p>Add the following code to the top of your <code>main.rs</code> to import our newly created module:</p>
 <pre is:raw="" class="astro-code github-dark" style="background-color: #24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color: #F97583">pub</span><span style="color: #E1E4E8"> </span><span style="color: #F97583">mod</span><span style="color: #E1E4E8"> </span><span style="color: #B392F0">solidity</span><span style="color: #E1E4E8">;</span></span>
 <span class="line"><span style="color: #F97583">use</span><span style="color: #E1E4E8"> </span><span style="color: #F97583">crate::</span><span style="color: #B392F0">solidity</span><span style="color: #F97583">::</span><span style="color: #B392F0">grammar</span><span style="color: #F97583">::</span><span style="color: #E1E4E8">{parse};</span></span></code></pre>
