@@ -6,7 +6,7 @@ heroImage: "/tinysol_part1.png"
 draft: false
 ---
 The best way to understand something is to build it from scratch and we're about to do just that. You'll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀.
-![J.F.Kennedy](/public/moon.jpg)
+![J.F.Kennedy](/moon.jpg)
 The goal of this multi-part tutorial series is to run a simple Solidity contract that looks like this:
 ```javascript
 contract flipper {
@@ -51,7 +51,7 @@ cd tinysol
 code .
 ```
 I'd also recommend installing the following extensions for VSCode:
-    ![rust-analyzer](/public/rust-analyzer.JPG)
+    ![rust-analyzer](/rust-analyzer.JPG)
 
 # Parser
 
@@ -93,7 +93,7 @@ This file will be automatically picked up by the toolchain and generate our tree
 Now let's try to parse an empty .sol file and see if we get any errors.
 First, create a new `contracts` folder in our project root and create `empty.sol` file inside it.
 By now your project structure should look like this:
-![Project structure](/public/project.JPG)
+![Project structure](/project.JPG)
 
 Add the following code to the top of your `main.rs` to import our newly created module:
 ```rust
