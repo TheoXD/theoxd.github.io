@@ -5,6 +5,7 @@ pubDate: "Jule 6 2023"
 heroImage: "/tinysol_part1.png"
 draft: false
 ---
+
 The best way to understand something is to build it from scratch and we're about to do just that. You'll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀.
 ![J.F.Kennedy](/moon.jpg)
 The goal of this multi-part tutorial series is to run a simple Solidity contract that looks like this:
@@ -78,7 +79,8 @@ pub mod grammar {
 }
 ```
 > **Note**
-> Note that you can only annotate one struct with `#[rust_sitter::language]` and it has to be the entry node of your grammar, almost like a root node. In our case it's a struct called SourceUnit.
+> Note that you can only annotate one struct with `#[rust_sitter::language]` and it has to be the entry node of our grammar, almost like a root node. In our case it's a struct called SourceUnit.
+> Annotation #[derive(PartialEq, Eq, Debug, Clone)] implements some useful traits to check struct instances for equality, debug and duplicate them.
 
 Now we need to add a new file called `build.rs` to our project root and add the following code to it:
 ```rust
@@ -115,8 +117,11 @@ Ok(
     SourceUnit,
 )
 ```
+The parse function returns a `Result` enum type which can be either `Ok` or `Err`. This is the way we do error handling in rust, it forces us to think whether a function can error out or not, way better than dealing with exceptions.
 
-Let's also add our first unit test right below our main function:
+# Unit tests
+
+For the sake of completion let's also add our first unit test right below our main function:
 ```rust
 #[cfg(test)]
 mod tests {

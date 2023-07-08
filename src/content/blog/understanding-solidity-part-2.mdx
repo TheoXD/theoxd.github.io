@@ -1,0 +1,479 @@
+---
+title: "Understanding Solidity Part 2: Parser and Grammar"
+description: "This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀. Now to the fun part, we're going to continue defining our grammar..."
+pubDate: "Jule 8 2023"
+heroImage: "/tinysol_part2.png"
+draft: false
+---
+
+import HorizontalCard from "../../components/HorizontalCard.astro";
+import { getEntry } from 'astro:content';
+
+This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀.  If you haven't read the first part yet, you can do so [here](/blog/understanding-solidity-part-1).
+
+<HorizontalCard
+    title="Understanding Solidity Part 1: Project Setup"
+    img="/tinysol_part1.png"
+    desc="The best way to understand something is to build it from scratch and we're about to do just that..."
+    url="/blog/understanding-solidity-part-1"
+    target="_self"
+    badge=""
+/>
+
+# Parsing contract
+
+Now let's jump straight to the fun part and continue defining our grammar in `src/solidity.rs`.
+We begin by filtering out spaces and newlines from our source code. Add the following structs to our module:
+```rust
+    #[rust_sitter::extra]
+    struct Whitespace {
+        #[rust_sitter::leaf(pattern = r"\s")]
+        _whitespace: (),
+    }
+
+    #[rust_sitter::extra]
+    struct Newline {
+        #[rust_sitter::leaf(pattern = r"\n")]
+        _new_line: (),
+    }
+```
+Everything annotated with `#[rust_sitter::extra]` will just be ignored by the parser and not appear in our final AST tree and instead be used to separate other tokens/symbols from each other. `#[rust_sitter::leaf()]` just means that the token can't be broken down any further hence it's a leaf. The `pattern` attribute is just a regular expression that will be used to match the token.
+Let's also handle comments in the same way:
+```rust
+    #[rust_sitter::extra]
+    struct SingleLineComment {
+        #[rust_sitter::leaf(pattern = r"//.*")]
+        _comment: (),
+    }
+```
+
+Now we're going to handle contract definitions. According to <a href="https://docs.soliditylang.org/en/v0.8.20/layout-of-source-files.html#layout-of-a-solidity-source-file" target="_blank">Solidity Documentation</a> a solidity source file can contain an arbitrary number of contract definitions, variable definitions, functions, etc, but for now we're only interested in contracts. To capture all the cases in the future let's wrap it inside an enum and call it `SourceUnitPart` and make `SourceUnit` contain a list of those:
+```rust
+    #[rust_sitter::language]
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub struct SourceUnit {
+        pub parts: Vec<SourceUnitPart>   //<-- Don't forget to add this field
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum SourceUnitPart {
+        ContractDefinition
+    }
+```
+
+We know that a contract always begins with a `contract` keyword, followed by an arbitrary name followed by curly brackets. We can ignore all the inheritance stuff for now as our Flipper contract doesn't inherit anything.
+
+```rust
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum SourceUnitPart {
+        ContractDefinition(
+            #[rust_sitter::leaf(text = "contract")] (),
+            #[rust_sitter::leaf(pattern = r"[a-zA-Z_][a-zA-Z0-9_]*", transform = |s| s.to_string())] String,
+            #[rust_sitter::leaf(text = "{")] (),
+            //TODO: Add contract parts
+            #[rust_sitter::leaf(text = "}")] (),
+        )
+    }
+```
+
+> **Now**
+> this is where Rust starts to shine, as it allows us to add values to each enum variant and express the syntax better so that rust-sitter can parse it.
+
+![Rust Enums](/enums.jpg)
+
+The `[a-zA-Z_][a-zA-Z0-9_]*` regex pattern matches any string that contains alphabet letters, digits or underscores but cannot start with a digit. The transform attribute is used to transform the matched string into a native rust type. To test our grammar let's add a new dummy contract inside our `contracts` folder and name it `empty_contract.sol`:
+```javascript
+contract flipper {
+    // Contract definition here
+}
+```
+
+Add a new unit test to our `main.rs` with the following code:
+```rust
+    #[test]
+    fn test_parse_empty_contract() {
+        let code = std::fs::read_to_string("./contracts/empty_contract.sol").expect("Unable to read source file");
+        let parsed = parse(code.as_str());
+        println!("{:#?}", parsed);
+        assert!(parsed.is_ok());
+    }
+```
+
+Now if we run
+```bash
+cargo test test_parse_empty_contract -- --nocapture
+```
+
+we should be seeing the following output:
+
+```bash
+Ok(
+    SourceUnit {
+        parts: [
+            ContractDefinition(
+                (),
+                "flipper",
+                (),
+                (),
+            ),
+        ],
+    },
+)
+test tests::test_parse_empty_contract ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.02s
+```
+
+# State variables
+
+Let's continue reading <a href="https://docs.soliditylang.org/en/v0.8.20/structure-of-a-contract.html#structure-of-a-contract" target="_blank">Solidity Documentation - Structure of a Contract</a>. We find out that each contract consists of several parts such as state variables, contract functions, etc. We can generalize those inside a new enum `ContractPart` and add it to our `ContractDefinition` right in between the curly brackets:
+
+```rust
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum SourceUnitPart {
+        ContractDefinition(
+            ...
+            #[rust_sitter::leaf(text = "{")] (),
+            Vec<ContractPart>, //<-- Add this
+            #[rust_sitter::leaf(text = "}")] (),
+        )
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum ContractPart {
+        //TODO: VariableDefinition,
+        //TODO: FunctionDefinition,
+        //TODO: ConstructorDefinition
+    }
+```
+
+The target contract we want to parse has just one variable declaration, 2 functions and one constructor. Let's first take care of state variables next.
+```javascript
+bool private value;
+```
+Our one variable in question is public and is of type bool. The keyword `public` is an access attribute dictating whether variable is readable from outside the contract. If it's `public` - compiler also creates a getter function for us. There are four visibility attributes in Solidity: `public`, `private`, `internal` and `external`, the latter one only applying to functions. The default visibility is `internal`, meaning it's only limited to the current contract it's declared in. Let's add them to our grammar as `Visibility` enum:
+
+```rust
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum ContractPart {
+        VariableDefinition(
+            Type,
+            Option<Visibility>,
+            #[rust_sitter::leaf(pattern = r"[a-zA-Z_][a-zA-Z0-9_]*", transform = |s| s.to_string())] String,
+            //TODO: Add initializer expression
+            #[rust_sitter::leaf(text = ";")] (),
+        ),
+        //TODO: FunctionDefinition,
+        //TODO: ConstructorDefinition
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum Type {
+        Bool(#[rust_sitter::leaf(text = "bool")] ())
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum Visibility {
+        Internal(#[rust_sitter::leaf(text = "internal")] ()),
+        External(#[rust_sitter::leaf(text = "external")] ()), //External keyword only applies to functions
+        Private(#[rust_sitter::leaf(text = "private")] ()),
+        Public(#[rust_sitter::leaf(text = "public")] ())
+    }
+```
+Notice the way we wrap `Visibility` attributes inside an `Option` type, making our visibility attribute optional. An Option in Rust is an enum that can be either `None` or `Some`, and if it's of type `Some` it's guaranteed to have some value.
+
+Another unit test wouldn't hurt. Add a new file `contract_with_var.sol` to your `contracts` folder and paste the following code into it:
+```javascript
+contract flipper {
+    bool private value;
+}
+```
+
+Add another unit test to our `main.rs`:
+```rust
+    #[test]
+    fn test_parse_dummy_contract_with_var() {
+        let code = std::fs::read_to_string("./contracts/contract_with_var.sol").expect("Unable to read source file");
+        let parsed = parse(code.as_str());
+        println!("{:#?}", parsed);
+        assert!(parsed.is_ok());
+    }
+```
+
+And make sure that the test passes by running:
+```bash
+cargo test test_parse_empty_contract
+```
+
+# Contract functions
+
+Ok great, we're halfway there. Let's now take care of contract functions. You're probably familiar with how functions look like in other languages, they start with a keyword like function, followed by a name, paranthesis containing function arguments and a body.
+
+```rust
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum ContractPart {
+        VariableDefinition(
+            ...
+        ),
+        FunctionDefinition(
+            #[rust_sitter::leaf(text = "function")] (),
+            #[rust_sitter::leaf(pattern = r"[a-zA-Z_][a-zA-Z0-9_]*", transform = |s| s.to_string())] String,
+
+            #[rust_sitter::leaf(text = "(")] (),
+            //TODO: Handle args
+            #[rust_sitter::leaf(text = ")")] (),
+
+            #[rust_sitter::repeat(non_empty = true)]
+            #[rust_sitter::delimited(
+                #[rust_sitter::leaf(text = " ")] ()
+            )]
+            Vec<Option<FunctionAttribute>>,
+            
+            //TODO: Handle "returns" keyword
+            
+            #[rust_sitter::leaf(text = "{")] (),
+            //TODO: Handle function body
+            #[rust_sitter::leaf(text = "}")] (),
+        ),
+        //TODO: ConstructorDefinition
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum FunctionAttribute {
+        Visibility(Visibility),
+        Mutability(Mutability)
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum Mutability {
+        Pure(#[rust_sitter::leaf(text = "pure")] ()),
+        View(#[rust_sitter::leaf(text = "view")] ()),
+        Constant(#[rust_sitter::leaf(text = "constant")] ()),
+        Payable(#[rust_sitter::leaf(text = "payable")] ())
+    }
+
+```
+> **Note**
+> #[rust_sitter::delimited()] annotation is used here to tell rust-sitter how attributes are being separated.
+
+Here we introduced a new enum `Mutability` which only applies to functions and can be either `pure`, `view`, `constant` or `payable`. What's the difference between the 4 you might ask?
+Well, `constant` is superseeded by `view` so there's technically three. Constant keyword is likely kept for compatibility reasons.
+`Pure` and `view` guarantee that the contract state won't be altered and they achieve that in different ways. Pure functions only see arguments you pass into them, while view functions can only read the contract state but not write to it.
+
+Because functions can also have both visibility and mutability attributes, we represent them with one single enum `FunctionAttribute`. Order of these attributes doesn't matter, a function can be either `public view` or `view public`.
+
+# Function arguments
+
+Functions can take in arguments. For the sake of simplicity we're going to only handle functions with upmost one argument and upmost one return type for now. Yes, in Solidity functions can return multiple values.
+
+```rust
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum ContractPart {
+        ...
+        FunctionDefinition(
+            #[rust_sitter::leaf(text = "function")] (),
+            #[rust_sitter::leaf(pattern = r"[a-zA-Z_][a-zA-Z0-9_]*", transform = |s| s.to_string())] String,
+
+            ParameterList,  //<-- Add this and remove paranthesis ( )
+
+            #[rust_sitter::repeat(non_empty = true)]
+            #[rust_sitter::delimited(
+                #[rust_sitter::leaf(text = " ")] ()
+            )]
+            Vec<Option<FunctionAttribute>>,
+            
+            Option<FunctionReturnParams>,  //<-- Add this
+            
+            #[rust_sitter::leaf(text = "{")] (),
+            //TODO: Handle function body
+            #[rust_sitter::leaf(text = "}")] (),
+        ),
+        ...
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum ParameterList {
+        Param(
+            #[rust_sitter::leaf(text = "(")] (),
+            Option<Parameter>,
+            #[rust_sitter::leaf(text = ")")] ()
+        )
+        //TODO: capture multiple parameters
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum FunctionReturnParams {
+        ParameterList(
+            #[rust_sitter::leaf(text = "returns")] (),
+            ParameterList,
+        )
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub struct Parameter {
+        pub ty: Expression,
+        //TODO: add storage
+        pub name: Option<Identifier>
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub struct Identifier {
+        #[rust_sitter::leaf(pattern = r"[a-zA-Z_][a-zA-Z0-9_]*", transform = |s| s.to_string())]
+        pub name: String
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum Expression {
+        //TODO: BoolLiteral,
+        //TODO: Variable,
+        //TODO: Assign,
+        //TODO: Not,
+        //TODO: Type
+    }
+```
+
+Here we introduced a few more enums, and a new `Parameter` struct which consists of a type and a bound variable name. Arguments passed into functions have their own storage called calldata that is immutable. We're going to handle that in the future.
+Note that param name is optional, as the argument name can be omitted completely in Solidity. `Parameter` also has a type which is an expression. More on expressions next.
+
+# Expressions and Statements
+
+You're probably already familiar with expressions and statements from other languages. Expressions are just statements that reduce to some value. For example, `1 + 2` is an expression that reduces to `3`, while `return 3` is a statement.
+To make expressions work:
+
+```rust
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum ContractPart {
+        ...
+        FunctionDefinition(
+            ...
+            
+            #[rust_sitter::leaf(text = "{")] (),
+            Option<Statement>,  //<-- Add this
+            #[rust_sitter::leaf(text = "}")] (),
+        ),
+        ...
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum Expression {
+        BoolLiteral(
+            #[rust_sitter::leaf(pattern = r"true|false", transform = |v| v.parse::<bool>().unwrap())]
+            bool,
+        ),
+        Variable(Identifier),
+        #[rust_sitter::prec_right(1)]
+        Assign(
+            Box<Expression>,
+            #[rust_sitter::leaf(text = "=")] (),
+            Box<Expression>,
+        ),
+        Not(
+            #[rust_sitter::leaf(text = "!")] (),
+            Box<Expression>,
+        ),
+        Type(Type)
+    }
+```
+> **Note**
+> #[rust_sitter::prec_right(1)] is a special annotation that tells rust-sitter that the expression is right associative and has a precedence of 1. This is needed if we have multiple expressions in a row, for example `1 + 2 + 3` is parsed as `1 + (2 + 3)` and not `(1 + 2) + 3`.
+> Also note that we're using `Box` here to avoid infinite recursion. Box is a smart pointer that stores data on the heap.
+
+Now let's finish off our `FunctionDefinition` by implementing `Statement`s:
+
+```rust
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum ContractPart {
+        ...
+        FunctionDefinition(
+            ...
+            #[rust_sitter::leaf(text = "{")] (),
+            Option<Statement>,  //<-- Add this
+            #[rust_sitter::leaf(text = "}")] (),
+        ),
+        ...
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum Statement {
+        Expression(
+            Expression,
+            #[rust_sitter::leaf(text = ";")] (),
+        ),
+        Return(
+            #[rust_sitter::leaf(text = "return")] (),
+            Option<Expression>,
+            #[rust_sitter::leaf(text = ";")] (),
+        )
+    }
+```
+
+# Constructors
+Constructors are special functions executed only once when the contract is being created for the first time, and it's where you'd normally put your initialization logic. Despite sharing some similarities with functions, there are some major differences. One notable difference is that constructors don't return anything, and can't have arbitrary names.
+
+```rust
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub enum ContractPart {
+        FunctionDefinition(
+            ...
+        ),
+        ConstructorDefinition(
+            #[rust_sitter::leaf(text = "constructor")] (),
+
+            ParameterList,
+
+            #[rust_sitter::repeat(non_empty = true)]
+            #[rust_sitter::delimited(
+                #[rust_sitter::leaf(text = " ")] ()
+            )]
+            Vec<Option<FunctionAttribute>>,
+            
+            #[rust_sitter::leaf(text = "{")] (),
+            Option<Statement>,
+            #[rust_sitter::leaf(text = "}")] (),
+        )
+    }
+```
+
+Does this actually work? Let's find out!
+Add the full source code of our `flipper.sol` contract to the `contracts` folder:
+```javascript
+contract flipper {
+    bool private value;
+
+    /// Constructor that initializes the `bool` value to the given `init_value`.
+    constructor(bool initvalue) {
+        value = initvalue;
+    }
+
+    /// A message that can be called on instantiated contracts.
+    /// This one flips the value of the stored `bool` from `true`
+    /// to `false` and vice versa.
+    function flip() public {
+        value = !value;
+    }
+
+    /// Simply returns the current value of our `bool`.
+    function get() public view returns (bool) {
+        return value;
+    }
+}
+```
+
+And add a new unit test to our `main.rs`:
+```rust
+    #[test]
+    fn test_parse_flipper_contract() {
+        let code = std::fs::read_to_string("./contracts/flipper.sol").expect("Unable to read source file");
+        let parsed = parse(code.as_str());
+        println!("{:#?}", parsed);
+        assert!(parsed.is_ok());
+    }
+```
+
+Now run the test
+```bash
+cargo test test_parse_flipper_contract -- --nocapture
+```
+
+If the test passes and you see a large struct being printed out, then congratunations! You've just built your first Solidity parser in Rust in less than 200 LOC 🎉
+In the next tutorial we're going to use this parsed output to generate assembly instructions and execute them in our own stack based virtual machine.
