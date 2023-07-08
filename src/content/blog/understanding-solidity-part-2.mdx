@@ -342,19 +342,6 @@ To make expressions work:
 
 ```rust
     #[derive(PartialEq, Eq, Debug, Clone)]
-    pub enum ContractPart {
-        ...
-        FunctionDefinition(
-            ...
-            
-            #[rust_sitter::leaf(text = "{")] (),
-            Option<Statement>,  //<-- Add this
-            #[rust_sitter::leaf(text = "}")] (),
-        ),
-        ...
-    }
-
-    #[derive(PartialEq, Eq, Debug, Clone)]
     pub enum Expression {
         BoolLiteral(
             #[rust_sitter::leaf(pattern = r"true|false", transform = |v| v.parse::<bool>().unwrap())]
