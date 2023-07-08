@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="lofi">
+  <head>
+    <!-- Global Metadata --><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="generator" content="Astro v2.5.7">
+
+<!-- Primary Meta Tags -->
+<title>Understanding Solidity Part 2: Parser and Grammar</title>
+<meta name="title" content="Understanding Solidity Part 2: Parser and Grammar">
+<meta name="description" content="This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀. Now to the fun part, we're going to continue defining our grammar...">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://astro-modern-personal-website.netlify.app/blog/understanding-solidity-part-2/">
+<meta property="og:title" content="Understanding Solidity Part 2: Parser and Grammar">
+<meta property="og:description" content="This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀. Now to the fun part, we're going to continue defining our grammar...">
+<meta property="og:image" content="https://astro-modern-personal-website.netlify.app/tinysol_part2.png">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://astro-modern-personal-website.netlify.app/blog/understanding-solidity-part-2/">
+<meta property="twitter:title" content="Understanding Solidity Part 2: Parser and Grammar">
+<meta property="twitter:description" content="This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀. Now to the fun part, we're going to continue defining our grammar...">
+<meta property="twitter:image" content="https://astro-modern-personal-website.netlify.app/tinysol_part2.png">
+  <link rel="stylesheet" href="/_astro/404.af69a309.css" />
+<link rel="stylesheet" href="/_astro/_slug_.af480368.css" /><script type="module">const s=document.getElementById("home"),o=document.getElementById("projects"),c=document.getElementById("services"),d=document.getElementById("store"),i=document.getElementById("blog"),l=document.getElementById("cv");var t=!0;const m=window.location.href,a=[o,c,d,i,l],n="bg-base-300";a.forEach(e=>{e?.id&&m.includes(e.id)&&(t=!1,e?.classList.add(n))});t&&s?.classList.add(n);
+</script></head>
+  <body>
+    <div class="bg-base-100 drawer drawer-mobile">
+      <input id="my-drawer" type="checkbox" class="drawer-toggle">
+      <div class="drawer-content flex flex-col bg-base-100">
+        <div class="sticky lg:hidden top-0 z-30 flex h-16 w-full justify-center bg-opacity-90 backdrop-blur transition-all duration-100 bg-base-100 text-base-content shadow-sm">
+  <div class="navbar">
+    <div class="navbar-start">
+      <label for="my-drawer" class="btn btn-square btn-ghost">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </label>
+    </div>
+    <div class="navbar-center">
+      <a class="btn btn-ghost normal-case text-xl" href="/">Theo Hallenius</a>
+    </div>
+    <div class="navbar-end"></div>
+  </div>
+</div>
+        <div class="md:flex md:justify-center">
+          <main class="p-6 pt-10 max-w-[900px]">
+            
+  <main class="md:flex md:justify-center">
+    <article class="prose prose-lg max-w-[750px] prose-img:mx-auto">
+      <img alt="Understanding Solidity Part 2: Parser and Grammar" class="w-full mb-6" width="750" height="422" src="/_astro/tinysol_part2_2b9GB7.webp" loading="lazy" decoding="async">
+      <h1 class="title my-2 text-4xl font-bold">Understanding Solidity Part 2: Parser and Grammar</h1>
+      <time>Jul 8, 2023</time>
+      <br>
+      
+      
+      <div class="divider my-2"></div>
+      
+    <p>This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀.  If you haven’t read the first part yet, you can do so <a href="/blog/understanding-solidity-part-1">here</a>.</p>
+<div class="rounded-lg bg-base-100 hover:shadow-xl transition ease-in-out hover:scale-[102%]">
+  <a href="/blog/understanding-solidity-part-1" target="_self">
+    <div class="hero-content flex-col md:flex-row">
+      <img alt="Understanding Solidity Part 1: Project Setup" class="max-w-full md:max-w-[13rem] rounded-lg" width="750" height="422" src="/_astro/tinysol_part1_ZlQu7d.webp" loading="lazy" decoding="async">
+      <div class="grow w-full">
+        <h1 class="text-xl font-bold">
+          Understanding Solidity Part 1: Project Setup
+          
+        </h1>
+        <p class="py-1 text-1xl">The best way to understand something is to build it from scratch and we&#39;re about to do just that...</p>
+        <div class="card-actions justify-end">
+          
+        </div>
+      </div>
+    </div>
+  </a>
+</div>
+<h1 id="parsing-contract">Parsing contract</h1>
+<p>Now let’s jump straight to the fun part and continue defining our grammar in <code>src/solidity.rs</code>.
+We begin by filtering out spaces and newlines from our source code. Add the following structs to our module:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">extra]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Whitespace</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(pattern </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">r&quot;\s&quot;</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">        _whitespace</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> (),</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">extra]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Newline</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(pattern </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">r&quot;\n&quot;</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">        _new_line</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> (),</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>Everything annotated with <code>#[rust_sitter::extra]</code> will just be ignored by the parser and not appear in our final AST tree and instead be used to separate other tokens/symbols from each other. <code>#[rust_sitter::leaf()]</code> just means that the token can’t be broken down any further hence it’s a leaf. The <code>pattern</code> attribute is just a regular expression that will be used to match the token.
+Let’s also handle comments in the same way:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">extra]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">SingleLineComment</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(pattern </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">r&quot;//.*&quot;</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">        _comment</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> (),</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>Now we’re going to handle contract definitions. According to <a href="https://docs.soliditylang.org/en/v0.8.20/layout-of-source-files.html#layout-of-a-solidity-source-file" target="_blank">Solidity Documentation</a> a solidity source file can contain an arbitrary number of contract definitions, variable definitions, functions, etc, but for now we’re only interested in contracts. To capture all the cases in the future let’s wrap it inside an enum and call it <code>SourceUnitPart</code> and make <code>SourceUnit</code> contain a list of those:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">language]</span></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> parts</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Vec</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">SourceUnitPart</span><span style="color:#E1E4E8">&gt;</span><span style="color:#6A737D">   //&lt;-- Don&#39;t forget to add this field</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">SourceUnitPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">ContractDefinition</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>We know that a contract always begins with a <code>contract</code> keyword, followed by an arbitrary name followed by curly brackets. We can ignore all the inheritance stuff for now as our Flipper contract doesn’t inherit anything.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">SourceUnitPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">ContractDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;contract&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(pattern </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">r&quot;[a-zA-Z_][a-zA-Z0-9_]*&quot;</span><span style="color:#E1E4E8">, transform </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">|</span><span style="color:#E1E4E8">s</span><span style="color:#F97583">|</span><span style="color:#E1E4E8"> s</span><span style="color:#F97583">.</span><span style="color:#E1E4E8">to_string())] </span><span style="color:#B392F0">String</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;{&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#6A737D">            //TODO: Add contract parts</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;}&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        )</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<blockquote>
+<p><strong>Now</strong>
+this is where Rust starts to shine, as it allows us to add values to each enum variant and express the syntax better so that rust-sitter can parse it.</p>
+</blockquote>
+<p><img src="/enums.jpg" alt="Rust Enums"/></p>
+<p>The <code>[a-zA-Z_][a-zA-Z0-9_]*</code> regex pattern matches any string that contains alphabet letters, digits or underscores but cannot start with a digit. The transform attribute is used to transform the matched string into a native rust type. To test our grammar let’s add a new dummy contract inside our <code>contracts</code> folder and name it <code>empty_contract.sol</code>:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">contract flipper {</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#6A737D">// Contract definition here</span></span>
+<span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
+<p>Add a new unit test to our <code>main.rs</code> with the following code:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[test]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">fn</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">test_parse_empty_contract</span><span style="color:#E1E4E8">() {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> code </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">std</span><span style="color:#F97583">::</span><span style="color:#B392F0">fs</span><span style="color:#F97583">::</span><span style="color:#B392F0">read_to_string</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;./contracts/empty_contract.sol&quot;</span><span style="color:#E1E4E8">)</span><span style="color:#F97583">.</span><span style="color:#B392F0">expect</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;Unable to read source file&quot;</span><span style="color:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> parsed </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">parse</span><span style="color:#E1E4E8">(code</span><span style="color:#F97583">.</span><span style="color:#B392F0">as_str</span><span style="color:#E1E4E8">());</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">println!</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;{:#?}&quot;</span><span style="color:#E1E4E8">, parsed);</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">assert!</span><span style="color:#E1E4E8">(parsed</span><span style="color:#F97583">.</span><span style="color:#B392F0">is_ok</span><span style="color:#E1E4E8">());</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>Now if we run</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">cargo</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test_parse_empty_contract</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--nocapture</span></span></code></pre>
+<p>we should be seeing the following output:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">Ok(</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">{</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">parts:</span><span style="color:#E1E4E8"> [</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">ContractDefinition(</span></span>
+<span class="line"><span style="color:#E1E4E8">                ()</span><span style="color:#B392F0">,</span></span>
+<span class="line"><span style="color:#E1E4E8">                </span><span style="color:#B392F0">&quot;flipper&quot;</span><span style="color:#B392F0">,</span></span>
+<span class="line"><span style="color:#E1E4E8">                ()</span><span style="color:#B392F0">,</span></span>
+<span class="line"><span style="color:#E1E4E8">                ()</span><span style="color:#B392F0">,</span></span>
+<span class="line"><span style="color:#E1E4E8">            ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        ],</span></span>
+<span class="line"><span style="color:#E1E4E8">    },</span></span>
+<span class="line"><span style="color:#E1E4E8">)</span></span>
+<span class="line"><span style="color:#79B8FF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">tests::test_parse_empty_contract</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">...</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">ok</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#79B8FF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">result:</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">ok.</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">1</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">passed</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">0</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">failed</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">0</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">ignored</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">0</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">measured</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">1</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">filtered</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">out</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">finished</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">in</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">0.02</span><span style="color:#9ECBFF">s</span></span></code></pre>
+<h1 id="state-variables">State variables</h1>
+<p>Let’s continue reading <a href="https://docs.soliditylang.org/en/v0.8.20/structure-of-a-contract.html#structure-of-a-contract" target="_blank">Solidity Documentation - Structure of a Contract</a>. We find out that each contract consists of several parts such as state variables, contract functions, etc. We can generalize those inside a new enum <code>ContractPart</code> and add it to our <code>ContractDefinition</code> right in between the curly brackets:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">SourceUnitPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">ContractDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;{&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Vec</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">ContractPart</span><span style="color:#E1E4E8">&gt;,</span><span style="color:#6A737D"> //&lt;-- Add this</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;}&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        )</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ContractPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: VariableDefinition,</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: FunctionDefinition,</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: ConstructorDefinition</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>The target contract we want to parse has just one variable declaration, 2 functions and one constructor. Let’s first take care of state variables next.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">bool private value;</span></span></code></pre>
+<p>Our one variable in question is public and is of type bool. The keyword <code>public</code> is an access attribute dictating whether variable is readable from outside the contract. If it’s <code>public</code> - compiler also creates a getter function for us. There are four visibility attributes in Solidity: <code>public</code>, <code>private</code>, <code>internal</code> and <code>external</code>, the latter one only applying to functions. The default visibility is <code>internal</code>, meaning it’s only limited to the current contract it’s declared in. Let’s add them to our grammar as <code>Visibility</code> enum:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ContractPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">VariableDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Type</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Visibility</span><span style="color:#E1E4E8">&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(pattern </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">r&quot;[a-zA-Z_][a-zA-Z0-9_]*&quot;</span><span style="color:#E1E4E8">, transform </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">|</span><span style="color:#E1E4E8">s</span><span style="color:#F97583">|</span><span style="color:#E1E4E8"> s</span><span style="color:#F97583">.</span><span style="color:#B392F0">to_string</span><span style="color:#E1E4E8">())] </span><span style="color:#B392F0">String</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#6A737D">            //TODO: Add initializer expression</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;;&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: FunctionDefinition,</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: ConstructorDefinition</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Type</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Bool</span><span style="color:#E1E4E8">(#[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;bool&quot;</span><span style="color:#E1E4E8">)] ())</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Visibility</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Internal</span><span style="color:#E1E4E8">(#[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;internal&quot;</span><span style="color:#E1E4E8">)] ()),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">External</span><span style="color:#E1E4E8">(#[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;external&quot;</span><span style="color:#E1E4E8">)] ()),</span><span style="color:#6A737D"> //External keyword only applies to functions</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Private</span><span style="color:#E1E4E8">(#[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;private&quot;</span><span style="color:#E1E4E8">)] ()),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Public</span><span style="color:#E1E4E8">(#[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;public&quot;</span><span style="color:#E1E4E8">)] ())</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>Notice the way we wrap <code>Visibility</code> attributes inside an <code>Option</code> type, making our visibility attribute optional. An Option in Rust is an enum that can be either <code>None</code> or <code>Some</code>, and if it’s of type <code>Some</code> it’s guaranteed to have some value.</p>
+<p>Another unit test wouldn’t hurt. Add a new file <code>contract_with_var.sol</code> to your <code>contracts</code> folder and paste the following code into it:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">contract flipper {</span></span>
+<span class="line"><span style="color:#E1E4E8">    bool private value;</span></span>
+<span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
+<p>Add another unit test to our <code>main.rs</code>:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[test]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">fn</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">test_parse_dummy_contract_with_var</span><span style="color:#E1E4E8">() {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> code </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">std</span><span style="color:#F97583">::</span><span style="color:#B392F0">fs</span><span style="color:#F97583">::</span><span style="color:#B392F0">read_to_string</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;./contracts/contract_with_var.sol&quot;</span><span style="color:#E1E4E8">)</span><span style="color:#F97583">.</span><span style="color:#B392F0">expect</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;Unable to read source file&quot;</span><span style="color:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> parsed </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">parse</span><span style="color:#E1E4E8">(code</span><span style="color:#F97583">.</span><span style="color:#B392F0">as_str</span><span style="color:#E1E4E8">());</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">println!</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;{:#?}&quot;</span><span style="color:#E1E4E8">, parsed);</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">assert!</span><span style="color:#E1E4E8">(parsed</span><span style="color:#F97583">.</span><span style="color:#B392F0">is_ok</span><span style="color:#E1E4E8">());</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>And make sure that the test passes by running:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">cargo</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test_parse_empty_contract</span></span></code></pre>
+<h1 id="contract-functions">Contract functions</h1>
+<p>Ok great, we’re halfway there. Let’s now take care of contract functions. You’re probably familiar with how functions look like in other languages, they start with a keyword like function, followed by a name, paranthesis containing function arguments and a body.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ContractPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">VariableDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">FunctionDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;function&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(pattern </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">r&quot;[a-zA-Z_][a-zA-Z0-9_]*&quot;</span><span style="color:#E1E4E8">, transform </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">|</span><span style="color:#E1E4E8">s</span><span style="color:#F97583">|</span><span style="color:#E1E4E8"> s</span><span style="color:#F97583">.</span><span style="color:#E1E4E8">to_string())] </span><span style="color:#B392F0">String</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;(&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#6A737D">            //TODO: Handle args</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;)&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">repeat(non_empty </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> true)]</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">delimited(</span></span>
+<span class="line"><span style="color:#E1E4E8">                #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot; &quot;</span><span style="color:#E1E4E8">)] ()</span></span>
+<span class="line"><span style="color:#E1E4E8">            )]</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Vec</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">FunctionAttribute</span><span style="color:#E1E4E8">&gt;&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span></span>
+<span class="line"><span style="color:#6A737D">            //TODO: Handle &quot;returns&quot; keyword</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;{&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#6A737D">            //TODO: Handle function body</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;}&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: ConstructorDefinition</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">FunctionAttribute</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Visibility</span><span style="color:#E1E4E8">(</span><span style="color:#B392F0">Visibility</span><span style="color:#E1E4E8">),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Mutability</span><span style="color:#E1E4E8">(</span><span style="color:#B392F0">Mutability</span><span style="color:#E1E4E8">)</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Mutability</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Pure</span><span style="color:#E1E4E8">(#[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;pure&quot;</span><span style="color:#E1E4E8">)] ()),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">View</span><span style="color:#E1E4E8">(#[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;view&quot;</span><span style="color:#E1E4E8">)] ()),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Constant</span><span style="color:#E1E4E8">(#[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;constant&quot;</span><span style="color:#E1E4E8">)] ()),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Payable</span><span style="color:#E1E4E8">(#[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;payable&quot;</span><span style="color:#E1E4E8">)] ())</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span></code></pre>
+<blockquote>
+<p><strong>Note</strong>
+#[rust_sitter::delimited()] annotation is used here to tell rust-sitter how attributes are being separated.</p>
+</blockquote>
+<p>Here we introduced a new enum <code>Mutability</code> which only applies to functions and can be either <code>pure</code>, <code>view</code>, <code>constant</code> or <code>payable</code>. What’s the difference between the 4 you might ask?
+Well, <code>constant</code> is superseeded by <code>view</code> so there’s technically three. Constant keyword is likely kept for compatibility reasons.
+<code>Pure</code> and <code>view</code> guarantee that the contract state won’t be altered and they achieve that in different ways. Pure functions only see arguments you pass into them, while view functions can only read the contract state but not write to it.</p>
+<p>Because functions can also have both visibility and mutability attributes, we represent them with one single enum <code>FunctionAttribute</code>. Order of these attributes doesn’t matter, a function can be either <code>public view</code> or <code>view public</code>.</p>
+<h1 id="function-arguments">Function arguments</h1>
+<p>Functions can take in arguments. For the sake of simplicity we’re going to only handle functions with upmost one argument and upmost one return type for now. Yes, in Solidity functions can return multiple values.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ContractPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">FunctionDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;function&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(pattern </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">r&quot;[a-zA-Z_][a-zA-Z0-9_]*&quot;</span><span style="color:#E1E4E8">, transform </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">|</span><span style="color:#E1E4E8">s</span><span style="color:#F97583">|</span><span style="color:#E1E4E8"> s</span><span style="color:#F97583">.</span><span style="color:#E1E4E8">to_string())] </span><span style="color:#B392F0">String</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">ParameterList</span><span style="color:#E1E4E8">,</span><span style="color:#6A737D">  //&lt;-- Add this and remove paranthesis ( )</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">repeat(non_empty </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> true)]</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">delimited(</span></span>
+<span class="line"><span style="color:#E1E4E8">                #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot; &quot;</span><span style="color:#E1E4E8">)] ()</span></span>
+<span class="line"><span style="color:#E1E4E8">            )]</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Vec</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">FunctionAttribute</span><span style="color:#E1E4E8">&gt;&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">FunctionReturnParams</span><span style="color:#E1E4E8">&gt;,</span><span style="color:#6A737D">  //&lt;-- Add this</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;{&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#6A737D">            //TODO: Handle function body</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;}&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ParameterList</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Param</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;(&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Parameter</span><span style="color:#E1E4E8">&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;)&quot;</span><span style="color:#E1E4E8">)] ()</span></span>
+<span class="line"><span style="color:#E1E4E8">        )</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: capture multiple parameters</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">FunctionReturnParams</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">ParameterList</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;returns&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">ParameterList</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#E1E4E8">        )</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Parameter</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> ty</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: add storage</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> name</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Identifier</span><span style="color:#E1E4E8">&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Identifier</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(pattern </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">r&quot;[a-zA-Z_][a-zA-Z0-9_]*&quot;</span><span style="color:#E1E4E8">, transform </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">|</span><span style="color:#E1E4E8">s</span><span style="color:#F97583">|</span><span style="color:#E1E4E8"> s</span><span style="color:#F97583">.</span><span style="color:#E1E4E8">to_string())]</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> name</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">String</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: BoolLiteral,</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: Variable,</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: Assign,</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: Not,</span></span>
+<span class="line"><span style="color:#6A737D">        //TODO: Type</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>Here we introduced a few more enums, and a new <code>Parameter</code> struct which consists of a type and a bound variable name. Arguments passed into functions have their own storage called calldata that is immutable. We’re going to handle that in the future.
+Note that param name is optional, as the argument name can be omitted completely in Solidity. <code>Parameter</code> also has a type which is an expression. More on expressions next.</p>
+<h1 id="expressions-and-statements">Expressions and Statements</h1>
+<p>You’re probably already familiar with expressions and statements from other languages. Expressions are just statements that reduce to some value. For example, <code>1 + 2</code> is an expression that reduces to <code>3</code>, while <code>return 3</code> is a statement.
+To make expressions work:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ContractPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">FunctionDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;{&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Statement</span><span style="color:#E1E4E8">&gt;,</span><span style="color:#6A737D">  //&lt;-- Add this</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;}&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">BoolLiteral</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(pattern </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">r&quot;true|false&quot;</span><span style="color:#E1E4E8">, transform </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">|</span><span style="color:#E1E4E8">v</span><span style="color:#F97583">|</span><span style="color:#E1E4E8"> v</span><span style="color:#F97583">.</span><span style="color:#B392F0">parse</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">bool</span><span style="color:#E1E4E8">&gt;()</span><span style="color:#F97583">.</span><span style="color:#B392F0">unwrap</span><span style="color:#E1E4E8">())]</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">bool</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Variable</span><span style="color:#E1E4E8">(</span><span style="color:#B392F0">Identifier</span><span style="color:#E1E4E8">),</span></span>
+<span class="line"><span style="color:#E1E4E8">        #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">prec_right(1)]</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Assign</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Box</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8">&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;=&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Box</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8">&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Not</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;!&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Box</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8">&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Type</span><span style="color:#E1E4E8">(</span><span style="color:#B392F0">Type</span><span style="color:#E1E4E8">)</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<blockquote>
+<p><strong>Note</strong>
+#[rust_sitter::prec_right(1)] is a special annotation that tells rust-sitter that the expression is right associative and has a precedence of 1. This is needed if we have multiple expressions in a row, for example <code>1 + 2 + 3</code> is parsed as <code>1 + (2 + 3)</code> and not <code>(1 + 2) + 3</code>.
+Also note that we’re using <code>Box</code> here to avoid infinite recursion. Box is a smart pointer that stores data on the heap.</p>
+</blockquote>
+<p>Now let’s finish off our <code>FunctionDefinition</code> by implementing <code>Statement</code>s:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ContractPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">FunctionDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;{&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Statement</span><span style="color:#E1E4E8">&gt;,</span><span style="color:#6A737D">  //&lt;-- Add this</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;}&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Statement</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;;&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Return</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;return&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8">&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;;&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        )</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<h1 id="constructors">Constructors</h1>
+<p>Constructors are special functions executed only once when the contract is being created for the first time, and it’s where you’d normally put your initialization logic. Despite sharing some similarities with functions, there are some major differences. One notable difference is that constructors don’t return anything, and can’t have arbitrary names.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ContractPart</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">FunctionDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#F97583">...</span></span>
+<span class="line"><span style="color:#E1E4E8">        ),</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">ConstructorDefinition</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;constructor&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">ParameterList</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">repeat(non_empty </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> true)]</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">delimited(</span></span>
+<span class="line"><span style="color:#E1E4E8">                #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot; &quot;</span><span style="color:#E1E4E8">)] ()</span></span>
+<span class="line"><span style="color:#E1E4E8">            )]</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Vec</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">FunctionAttribute</span><span style="color:#E1E4E8">&gt;&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;{&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Statement</span><span style="color:#E1E4E8">&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;}&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
+<span class="line"><span style="color:#E1E4E8">        )</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>Does this actually work? Let’s find out!
+Add the full source code of our <code>flipper.sol</code> contract to the <code>contracts</code> folder:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">contract flipper {</span></span>
+<span class="line"><span style="color:#E1E4E8">    bool private value;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#6A737D">/// Constructor that initializes the `bool` value to the given `init_value`.</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#B392F0">constructor</span><span style="color:#E1E4E8">(bool initvalue) {</span></span>
+<span class="line"><span style="color:#E1E4E8">        value </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> initvalue;</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#6A737D">/// A message that can be called on instantiated contracts.</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#6A737D">/// This one flips the value of the stored `bool` from `true`</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#6A737D">/// to `false` and vice versa.</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">function</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">flip</span><span style="color:#E1E4E8">() </span><span style="color:#B392F0">public</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        value </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">!</span><span style="color:#E1E4E8">value;</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#6A737D">/// Simply returns the current value of our `bool`.</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">function</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">get</span><span style="color:#E1E4E8">() </span><span style="color:#B392F0">public</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">view</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">returns</span><span style="color:#E1E4E8"> (</span><span style="color:#FFAB70">bool</span><span style="color:#E1E4E8">) {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">return</span><span style="color:#E1E4E8"> value;</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
+<p>And add a new unit test to our <code>main.rs</code>:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[test]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">fn</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">test_parse_flipper_contract</span><span style="color:#E1E4E8">() {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> code </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">std</span><span style="color:#F97583">::</span><span style="color:#B392F0">fs</span><span style="color:#F97583">::</span><span style="color:#B392F0">read_to_string</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;./contracts/flipper.sol&quot;</span><span style="color:#E1E4E8">)</span><span style="color:#F97583">.</span><span style="color:#B392F0">expect</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;Unable to read source file&quot;</span><span style="color:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> parsed </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">parse</span><span style="color:#E1E4E8">(code</span><span style="color:#F97583">.</span><span style="color:#B392F0">as_str</span><span style="color:#E1E4E8">());</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">println!</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;{:#?}&quot;</span><span style="color:#E1E4E8">, parsed);</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">assert!</span><span style="color:#E1E4E8">(parsed</span><span style="color:#F97583">.</span><span style="color:#B392F0">is_ok</span><span style="color:#E1E4E8">());</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
+<p>Now run the test</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">cargo</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test_parse_flipper_contract</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--nocapture</span></span></code></pre>
+<p>If the test passes and you see a large struct being printed out, then congratunations! You’ve just built your first Solidity parser in Rust in less than 200 LOC 🎉
+In the next tutorial we’re going to use this parsed output to generate assembly instructions and execute them in our own stack based virtual machine.</p>
+
+    </article>
+  </main>
+
+          </main>
+        </div>
+        <footer class="footer footer-center block mb-5 pt-10">
+  <div class="pb-2">
+    Copyright &copy; 2023 Theo Hallenius
+  </div>
+  <div class="inline opacity-75">
+    <!-- Thanks for using this template. Please keep this line to support my work :) -->
+    <a href="https://astro-modern-personal-website.netlify.app/" target="_blank" class="font-bold">Website Template</a> developed by
+    <a href="https://manuelernestog.github.io" target="_blank" class="font-bold">Manuel Ernesto ⚡️</a>
+  </div>
+</footer>
+      </div>
+      <div class="drawer-side bg-base-100">
+  <label for="my-drawer" class="drawer-overlay bg-base-100"></label>
+  <div class="menu flex flex-col flex-nowrap p-4 overflow-y-auto w-[20rem] bg-base-100 text-base-content">
+    <div class="w-fit">
+      <a href="/">
+        <div class="avatar transition ease-in-out w-1/2 hover:scale-[102%] block m-auto mt-3 mb-8 h-36">
+          <div>
+            <img class="mask mask-circle" alt="Profile image" width="300" height="300" src="/_astro/profile_Z1AnH13.webp" loading="lazy" decoding="async">
+          </div>
+          <h1 class="m-2 font-bold text-lg font-medium">Theo Hallenius</h1>
+        </div>
+        <p class="w-full text-center">Blockchain/Software Developer</p>
+      </a>
+    </div>
+
+
+    <ul class="grow shrink mt-6">
+      <!-- Sidebar content here -->
+      <li><a id="home" href="/">Home</a></li>
+      <li><a id="projects" href="/projects">Projects</a></li>
+      <li><a id="blog" href="/blog/">Blog</a></li>
+      <li><a id="cv" href="/cv">CV</a></li>
+      <li><a href="mailto:theo.hallenius@gmail.com" target="_blank" referrerpolicy="no-referrer-when-downgrade">Contact</a></li>
+    </ul>
+
+
+    <div class="social-icons px-4 my-2 flex self-center">
+      <!-- 
+      <a
+        href="https://www.artstation.com/theoxd"
+        target="_blank"
+        class="mx-3"
+        aria-label="Art Station"
+        title="Art Station"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          style="fill: currentColor;transform: ;msFilter:;"
+          ><path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M5 2h2v3H5zm4 0h2v3H9zm4 0h2v3h-2zm6 7h-2V7H3v11c0 1.654 1.346 3 3 3h8c1.654 0 3-1.346 3-3h2c1.103 0 2-.897 2-2v-5c0-1.103-.897-2-2-2zm-4 9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V9h10v9zm2-2v-5h2l.002 5H17z"
+          ></path></svg
+        >
+      </a>
+    -->
+      <a href="https://github.com/TheoXD" target="_blank" class="mx-3" aria-label="Github" title="Github">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: currentColor;transform: ;msFilter:;"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.026 2c-5.509 0-9.974 4.465-9.974 9.974 0 4.406 2.857 8.145 6.821 9.465.499.09.679-.217.679-.481 0-.237-.008-.865-.011-1.696-2.775.602-3.361-1.338-3.361-1.338-.452-1.152-1.107-1.459-1.107-1.459-.905-.619.069-.605.069-.605 1.002.07 1.527 1.028 1.527 1.028.89 1.524 2.336 1.084 2.902.829.091-.645.351-1.085.635-1.334-2.214-.251-4.542-1.107-4.542-4.93 0-1.087.389-1.979 1.024-2.675-.101-.253-.446-1.268.099-2.64 0 0 .837-.269 2.742 1.021a9.582 9.582 0 0 1 2.496-.336 9.554 9.554 0 0 1 2.496.336c1.906-1.291 2.742-1.021 2.742-1.021.545 1.372.203 2.387.099 2.64.64.696 1.024 1.587 1.024 2.675 0 3.833-2.33 4.675-4.552 4.922.355.308.675.916.675 1.846 0 1.334-.012 2.41-.012 2.737 0 .267.178.577.687.479C19.146 20.115 22 16.379 22 11.974 22 6.465 17.535 2 12.026 2z"></path>
+        </svg>
+      </a>
+      <a href="https://twitter.com/TheoHallenius" target="_blank" class="mx-3" aria-label="Twitter" title="Twitter">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: currentColor;transform: ;msFilter:;"><path d="M19.633 7.997c.013.175.013.349.013.523 0 5.325-4.053 11.461-11.46 11.461-2.282 0-4.402-.661-6.186-1.809.324.037.636.05.973.05a8.07 8.07 0 0 0 5.001-1.721 4.036 4.036 0 0 1-3.767-2.793c.249.037.499.062.761.062.361 0 .724-.05 1.061-.137a4.027 4.027 0 0 1-3.23-3.953v-.05c.537.299 1.16.486 1.82.511a4.022 4.022 0 0 1-1.796-3.354c0-.748.199-1.434.548-2.032a11.457 11.457 0 0 0 8.306 4.215c-.062-.3-.1-.611-.1-.923a4.026 4.026 0 0 1 4.028-4.028c1.16 0 2.207.486 2.943 1.272a7.957 7.957 0 0 0 2.556-.973 4.02 4.02 0 0 1-1.771 2.22 8.073 8.073 0 0 0 2.319-.624 8.645 8.645 0 0 1-2.019 2.083z"></path>
+        </svg>
+      </a>
+      <a href="https://www.linkedin.com/in/theo-hallenius/" target="_blank" class="mx-3" aria-label="Linkedin" title="Linkedin">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: currentColor;transform: ;msFilter:;"><circle cx="4.983" cy="5.009" r="2.188"></circle><path d="M9.237 8.855v12.139h3.769v-6.003c0-1.584.298-3.118 2.262-3.118 1.937 0 1.961 1.811 1.961 3.218v5.904H21v-6.657c0-3.27-.704-5.783-4.526-5.783-1.835 0-3.065 1.007-3.568 1.96h-.051v-1.66H9.237zm-6.142 0H6.87v12.139H3.095z"></path>
+        </svg>
+      </a>
+
+      <a href="/rss.xml" target="_blank" class="mx-3" aria-label="RSS Feed" title="RSS Feed">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: currentColor;transform: ;msFilter:;"><path d="M19 20.001C19 11.729 12.271 5 4 5v2c7.168 0 13 5.832 13 13.001h2z"></path><path d="M12 20.001h2C14 14.486 9.514 10 4 10v2c4.411 0 8 3.589 8 8.001z"></path><circle cx="6" cy="18" r="2"></circle>
+        </svg>
+      </a>
+    </div>
+  </div>
+</div>
+    </div>
+
+    <div class="fixed bottom-0 right-0 w-1/6">
+      <img src="/signature2.png" alt="overlay">
+    </div>
+    
+  </body></html>
