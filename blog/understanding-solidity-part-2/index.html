@@ -24,7 +24,7 @@
 <meta property="twitter:title" content="Understanding Solidity Part 2: Parser and Grammar">
 <meta property="twitter:description" content="This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀. Now to the fun part, we're going to continue defining our grammar...">
 <meta property="twitter:image" content="https://astro-modern-personal-website.netlify.app/tinysol_part2.png">
-  <link rel="stylesheet" href="/_astro/404.af69a309.css" />
+  <link rel="stylesheet" href="/_astro/404.237ea004.css" />
 <link rel="stylesheet" href="/_astro/_slug_.af480368.css" /><script type="module">const s=document.getElementById("home"),o=document.getElementById("projects"),c=document.getElementById("services"),d=document.getElementById("store"),i=document.getElementById("blog"),l=document.getElementById("cv");var t=!0;const m=window.location.href,a=[o,c,d,i,l],n="bg-base-300";a.forEach(e=>{e?.id&&m.includes(e.id)&&(t=!1,e?.classList.add(n))});t&&s?.classList.add(n);
 </script></head>
   <body>
@@ -216,7 +216,7 @@ this is where Rust starts to shine, as it allows us to add values to each enum v
 <p>And make sure that the test passes by running:</p>
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">cargo</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test_parse_dummy_contract_with_var</span></span></code></pre>
 <h1 id="contract-functions">Contract functions</h1>
-<p>Ok great, we’re halfway there. Let’s now take care of contract functions. You’re probably familiar with how functions look like in other languages, they start with a keyword like function, followed by a name, paranthesis containing function arguments and a body.</p>
+<p>Ok great, we’re halfway there. Let’s now take care of contract functions. You’re probably familiar with how functions look like in other languages, they start with a keyword such as <code>function</code>, followed by a name, paranthesis containing function arguments and a body. It’s the same here:</p>
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ContractPart</span><span style="color:#E1E4E8"> {</span></span>
 <span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">VariableDefinition</span><span style="color:#E1E4E8">(</span></span>
@@ -265,7 +265,8 @@ this is where Rust starts to shine, as it allows us to add values to each enum v
 </blockquote>
 <p>Here we introduced a new enum <code>Mutability</code> which only applies to functions and can be either <code>pure</code>, <code>view</code>, <code>constant</code> or <code>payable</code>. What’s the difference between the 4 you might ask?
 Well, <code>constant</code> is superseeded by <code>view</code> so there’s technically three. Constant keyword is likely kept for compatibility reasons.
-<code>Pure</code> and <code>view</code> guarantee that the contract state won’t be altered and they achieve that in different ways. Pure functions only see arguments you pass into them, while view functions can only read the contract state but not write to it.</p>
+<code>Pure</code> and <code>view</code> guarantee that the contract state won’t be altered and they achieve that in different ways. Pure functions only see arguments you pass into them, while view functions can only read the contract state but not write to it.
+Do you remember when I send there were 4 mutability attrbutes? Well, I lied. There’s actually one more called <code>nonpayable</code> which is the default mutability attribute for functions. It means functions can’t receive Ether unless expcilictly marked as <code>payable</code>.</p>
 <p>Because functions can also have both visibility and mutability attributes, we represent them with one single enum <code>FunctionAttribute</code>. Order of these attributes doesn’t matter, a function can be either <code>public view</code> or <code>view public</code>.</p>
 <h1 id="function-arguments">Function arguments</h1>
 <p>Functions can take in arguments. For the sake of simplicity we’re going to only handle functions with upmost one argument and upmost one return type for now. Yes, in Solidity functions can return multiple values.</p>
@@ -326,11 +327,11 @@ Well, <code>constant</code> is superseeded by <code>view</code> so there’s tec
 <span class="line"></span>
 <span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Expression</span><span style="color:#E1E4E8"> {</span></span>
-<span class="line"><span style="color:#6A737D">        //TODO: BoolLiteral,</span></span>
-<span class="line"><span style="color:#6A737D">        //TODO: Variable,</span></span>
-<span class="line"><span style="color:#6A737D">        //TODO: Assign,</span></span>
-<span class="line"><span style="color:#6A737D">        //TODO: Not,</span></span>
-<span class="line"><span style="color:#6A737D">        //TODO: Type</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">BoolLiteral</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Variable</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Assign</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Not</span><span style="color:#E1E4E8">,</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Type</span></span>
 <span class="line"><span style="color:#E1E4E8">    }</span></span></code></pre>
 <p>Here we introduced a few more enums, and a new <code>Parameter</code> struct which consists of a type and a bound variable name. Arguments passed into functions have their own storage called calldata that is immutable. We’re going to handle that in the future.
 Note that param name is optional, as the argument name can be omitted completely in Solidity. <code>Parameter</code> also has a type which is an expression. More on expressions next.</p>
@@ -443,6 +444,24 @@ Add the full source code of our <code>flipper.sol</code> contract to the <code>c
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">cargo</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test_parse_flipper_contract</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--nocapture</span></span></code></pre>
 <p>If the test passes and you see a large struct being printed out, then congratunations! You’ve just built your first Solidity parser in Rust in less than 200 LOC 🎉
 In the next tutorial we’re going to use this parsed output to generate assembly instructions and execute them in our own stack based virtual machine.</p>
+<p>Part 3:</p>
+<div class="rounded-lg bg-base-100 hover:shadow-xl transition ease-in-out hover:scale-[102%]">
+  <a href="/blog/understanding-solidity-part-3" target="_self">
+    <div class="hero-content flex-col md:flex-row">
+      <img alt="Understanding Solidity Part 3: Virtual Machine" class="max-w-full md:max-w-[13rem] rounded-lg" width="750" height="422" src="/_astro/tinysol_part3_1iwsDJ.webp" loading="lazy" decoding="async">
+      <div class="grow w-full">
+        <h1 class="text-xl font-bold">
+          Understanding Solidity Part 3: Virtual Machine
+          
+        </h1>
+        <p class="py-1 text-1xl">In the previous part we&#39;ve written a Solidity grammar, or at least we&#39;ve written enough to parse our example contract. Today we&#39;ll go one step further and make it actually run by writing our own stack-based virtual machine.</p>
+        <div class="card-actions justify-end">
+          
+        </div>
+      </div>
+    </div>
+  </a>
+</div>
 
     </article>
   </main>

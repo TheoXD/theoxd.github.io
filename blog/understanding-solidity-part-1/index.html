@@ -24,7 +24,7 @@
 <meta property="twitter:title" content="Understanding Solidity Part 1: Project Setup">
 <meta property="twitter:description" content="The best way to understand something is to build it from scratch and we're about to do just that. You'll learn how Solidity works under the hood by building your very own Solidity parser and virtual machine in Rust 🦀.">
 <meta property="twitter:image" content="https://astro-modern-personal-website.netlify.app/tinysol_part1.png">
-  <link rel="stylesheet" href="/_astro/404.af69a309.css" />
+  <link rel="stylesheet" href="/_astro/404.237ea004.css" />
 <link rel="stylesheet" href="/_astro/_slug_.af480368.css" /><script type="module">const s=document.getElementById("home"),o=document.getElementById("projects"),c=document.getElementById("services"),d=document.getElementById("store"),i=document.getElementById("blog"),l=document.getElementById("cv");var t=!0;const m=window.location.href,a=[o,c,d,i,l],n="bg-base-300";a.forEach(e=>{e?.id&&m.includes(e.id)&&(t=!1,e?.classList.add(n))});t&&s?.classList.add(n);
 </script></head>
   <body>
@@ -110,7 +110,9 @@ Let’s start by defining our module with our entry node:</p>
 <span class="line"></span>
 <span class="line"><span style="color:#E1E4E8">    #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">language]</span></span>
 <span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
-<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8">;</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> parts</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Vec</span><span style="color:#E1E4E8">&lt;&gt;</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
 <span class="line"></span>
 <span class="line"><span style="color:#6A737D">    // Grammar definitions go here</span></span>
 <span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
@@ -133,14 +135,14 @@ By now your project structure should look like this:
 <img src="/project.JPG" alt="Project structure"/></p>
 <p>Add the following code to the top of your <code>main.rs</code> to import our newly created module:</p>
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">mod</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">solidity</span><span style="color:#E1E4E8">;</span></span>
-<span class="line"><span style="color:#F97583">use</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">crate::</span><span style="color:#B392F0">solidity</span><span style="color:#F97583">::</span><span style="color:#B392F0">grammar</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">{parse};</span></span></code></pre>
+<span class="line"><span style="color:#F97583">use</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">crate::</span><span style="color:#B392F0">solidity</span><span style="color:#F97583">::</span><span style="color:#B392F0">grammar</span><span style="color:#F97583">::*</span><span style="color:#E1E4E8">;</span></span></code></pre>
 <p>Finally, and add the following code to your main function:</p>
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#F97583">fn</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">main</span><span style="color:#E1E4E8">() {</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> code </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">std</span><span style="color:#F97583">::</span><span style="color:#B392F0">fs</span><span style="color:#F97583">::</span><span style="color:#B392F0">read_to_string</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;./contracts/empty.sol&quot;</span><span style="color:#E1E4E8">)</span><span style="color:#F97583">.</span><span style="color:#B392F0">expect</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;Unable to read source file&quot;</span><span style="color:#E1E4E8">);</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> parsed </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">parse</span><span style="color:#E1E4E8">(code</span><span style="color:#F97583">.</span><span style="color:#B392F0">as_str</span><span style="color:#E1E4E8">());</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#B392F0">println!</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;{:#?}&quot;</span><span style="color:#E1E4E8">, parsed);</span></span>
 <span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
-<p>Now run <code>cargo run</code> in your terminal and you should see the following output:</p>
+<p>Now run <code>cargo run</code> in your terminal and you should see the following output at the end:</p>
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">Ok(</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#B392F0">SourceUnit,</span></span>
 <span class="line"><span style="color:#E1E4E8">)</span></span></code></pre>
@@ -150,14 +152,14 @@ By now your project structure should look like this:
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">#[cfg(test)]</span></span>
 <span class="line"><span style="color:#F97583">mod</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">tests</span><span style="color:#E1E4E8"> {</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">use</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">super</span><span style="color:#F97583">::*</span><span style="color:#E1E4E8">;</span></span>
-<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">use</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">solidity</span><span style="color:#F97583">::</span><span style="color:#B392F0">grammar</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">{</span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8">};</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">use</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">solidity</span><span style="color:#F97583">::</span><span style="color:#B392F0">grammar</span><span style="color:#F97583">::*</span><span style="color:#E1E4E8">;</span></span>
 <span class="line"></span>
 <span class="line"><span style="color:#E1E4E8">    #[test]</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">fn</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">test_parse_empty</span><span style="color:#E1E4E8">() {</span></span>
 <span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> code </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">std</span><span style="color:#F97583">::</span><span style="color:#B392F0">fs</span><span style="color:#F97583">::</span><span style="color:#B392F0">read_to_string</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;./contracts/empty.sol&quot;</span><span style="color:#E1E4E8">)</span><span style="color:#F97583">.</span><span style="color:#B392F0">expect</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;Unable to read source file&quot;</span><span style="color:#E1E4E8">);</span></span>
 <span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> parsed </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">parse</span><span style="color:#E1E4E8">(code</span><span style="color:#F97583">.</span><span style="color:#B392F0">as_str</span><span style="color:#E1E4E8">());</span></span>
 <span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">assert!</span><span style="color:#E1E4E8">(parsed</span><span style="color:#F97583">.</span><span style="color:#B392F0">is_ok</span><span style="color:#E1E4E8">());</span></span>
-<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">assert_eq!</span><span style="color:#E1E4E8">(parsed</span><span style="color:#F97583">.</span><span style="color:#B392F0">unwrap</span><span style="color:#E1E4E8">(), </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8"> { parts</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">vec!</span><span style="color:#E1E4E8">[] });</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">assert_eq!</span><span style="color:#E1E4E8">(parsed</span><span style="color:#F97583">.</span><span style="color:#B392F0">unwrap</span><span style="color:#E1E4E8">(), </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8"> { parts</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">vec!</span><span style="color:#E1E4E8">[] } );</span></span>
 <span class="line"><span style="color:#E1E4E8">    }</span></span>
 <span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
 <p>If you run <code>cargo test</code> it should say:</p>
@@ -167,6 +169,24 @@ By now your project structure should look like this:
 <span class="line"><span style="color:#79B8FF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">result:</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">ok.</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">1</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">passed</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">0</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">failed</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">0</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">ignored</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">0</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">measured</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">0</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">filtered</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">out</span><span style="color:#E1E4E8">; </span><span style="color:#B392F0">finished</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">in</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">0.00</span><span style="color:#9ECBFF">s</span></span></code></pre>
 <p>If everything displayed correctly without any errors - congratulations!🎉. The boring boilerplate part is now over and the fun part is about to begin!</p>
 <p>In the next tutorial we’re going to finish the Solidity parser and try to parse our contract. Stay tuned!</p>
+<p>Part 2:</p>
+<div class="rounded-lg bg-base-100 hover:shadow-xl transition ease-in-out hover:scale-[102%]">
+  <a href="/blog/understanding-solidity-part-2" target="_self">
+    <div class="hero-content flex-col md:flex-row">
+      <img alt="Understanding Solidity Part 2: Parser and Grammar" class="max-w-full md:max-w-[13rem] rounded-lg" width="750" height="422" src="/_astro/tinysol_part2_sOYgg.webp" loading="lazy" decoding="async">
+      <div class="grow w-full">
+        <h1 class="text-xl font-bold">
+          Understanding Solidity Part 2: Parser and Grammar
+          
+        </h1>
+        <p class="py-1 text-1xl">This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀. Now to the fun part, we&#39;re going to continue defining our grammar...</p>
+        <div class="card-actions justify-end">
+          
+        </div>
+      </div>
+    </div>
+  </a>
+</div>
 
     </article>
   </main>
