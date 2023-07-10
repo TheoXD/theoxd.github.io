@@ -10,6 +10,7 @@ import HorizontalCard from "../../components/HorizontalCard.astro";
 import { getEntry } from 'astro:content';
 
 This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀.  If you haven't read the first part yet, you can do so [here](/blog/understanding-solidity-part-1).
+If you wish to skip the boring boilerplate setup from previous tutorial you can download the template [here](https://github.com/TheoXD/tinysol/archive/4ce2abfa27095c67af0424a853bb1c0ed4fda0f1.zip).
 
 <HorizontalCard
     title="Understanding Solidity Part 1: Project Setup"
@@ -464,6 +465,7 @@ cargo test test_parse_flipper_contract -- --nocapture
 ```
 
 If the test passes and you see a large struct being printed out, then congratunations! You've just built your first Solidity parser in Rust in less than 200 LOC 🎉
+If by any chance you feel stuck - here are project files for this tutorial part [here](If you wish to skip the boring boilerplate setup from previous tutorial you can download the template [here](https://github.com/TheoXD/tinysol/archive/6ecf74c8afef3e4bf90a81a312d91bdda923995f.zip).
 In the next tutorial we're going to use this parsed output to generate assembly instructions and execute them in our own stack based virtual machine.
 
 Part 3:
