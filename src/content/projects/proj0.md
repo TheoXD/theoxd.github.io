@@ -4,7 +4,7 @@ description: "I've written my very own Rholang parser and runtime. With my imple
 pubDate: "June 25 2023"
 url: "#"
 heroImage: "/new_rho2.JPG"
-badge: "NEW"
+badge: "Rust"
 ---
 
 To those wondering what I've been up to after my departure from Rhonix, well, I've been doing A LOT of Rust , in fact I've already written my very own Rholang parser and runtime. With my implementation there is no more need for normization/sorting (which was quite an expensive operation) and it's no longer a bottleneck 🎉
