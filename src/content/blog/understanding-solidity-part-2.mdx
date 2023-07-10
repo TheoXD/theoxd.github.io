@@ -207,7 +207,7 @@ cargo test test_parse_dummy_contract_with_var
 
 # Contract functions
 
-Ok great, we're halfway there. Let's now take care of contract functions. You're probably familiar with how functions look like in other languages, they start with a keyword like function, followed by a name, paranthesis containing function arguments and a body.
+Ok great, we're halfway there. Let's now take care of contract functions. You're probably familiar with how functions look like in other languages, they start with a keyword such as `function`, followed by a name, paranthesis containing function arguments and a body. It's the same here:
 
 ```rust
     #[derive(PartialEq, Eq, Debug, Clone)]
@@ -259,6 +259,7 @@ Ok great, we're halfway there. Let's now take care of contract functions. You're
 Here we introduced a new enum `Mutability` which only applies to functions and can be either `pure`, `view`, `constant` or `payable`. What's the difference between the 4 you might ask?
 Well, `constant` is superseeded by `view` so there's technically three. Constant keyword is likely kept for compatibility reasons.
 `Pure` and `view` guarantee that the contract state won't be altered and they achieve that in different ways. Pure functions only see arguments you pass into them, while view functions can only read the contract state but not write to it.
+Do you remember when I send there were 4 mutability attrbutes? Well, I lied. There's actually one more called `nonpayable` which is the default mutability attribute for functions. It means functions can't receive Ether unless expcilictly marked as `payable`.
 
 Because functions can also have both visibility and mutability attributes, we represent them with one single enum `FunctionAttribute`. Order of these attributes doesn't matter, a function can be either `public view` or `view public`.
 
@@ -324,11 +325,11 @@ Functions can take in arguments. For the sake of simplicity we're going to only 
 
     #[derive(PartialEq, Eq, Debug, Clone)]
     pub enum Expression {
-        //TODO: BoolLiteral,
-        //TODO: Variable,
-        //TODO: Assign,
-        //TODO: Not,
-        //TODO: Type
+        BoolLiteral,
+        Variable,
+        Assign,
+        Not,
+        Type
     }
 ```
 
@@ -464,3 +465,13 @@ cargo test test_parse_flipper_contract -- --nocapture
 
 If the test passes and you see a large struct being printed out, then congratunations! You've just built your first Solidity parser in Rust in less than 200 LOC 🎉
 In the next tutorial we're going to use this parsed output to generate assembly instructions and execute them in our own stack based virtual machine.
+
+Part 3:
+<HorizontalCard
+    title="Understanding Solidity Part 3: Virtual Machine"
+    img="/tinysol_part3.png"
+    desc="In the previous part we've written a Solidity grammar, or at least we've written enough to parse our example contract. Today we'll go one step further and make it actually run by writing our own stack-based virtual machine."
+    url="/blog/understanding-solidity-part-3"
+    target="_self"
+    badge=""
+/>

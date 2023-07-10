@@ -73,7 +73,9 @@ pub mod grammar {
 
     #[rust_sitter::language]
     #[derive(PartialEq, Eq, Debug, Clone)]
-    pub struct SourceUnit;
+    pub struct SourceUnit {
+        pub parts: Vec<>
+    }
 
     // Grammar definitions go here
 }
@@ -100,7 +102,7 @@ By now your project structure should look like this:
 Add the following code to the top of your `main.rs` to import our newly created module:
 ```rust
 pub mod solidity;
-use crate::solidity::grammar::{parse};
+use crate::solidity::grammar::*;
 ```
 Finally, and add the following code to your main function:
 ```rust
@@ -111,7 +113,7 @@ fn main() {
 }
 ```
 
-Now run `cargo run` in your terminal and you should see the following output:
+Now run `cargo run` in your terminal and you should see the following output at the end:
 ```bash
 Ok(
     SourceUnit,
@@ -126,14 +128,14 @@ For the sake of completion let's also add our first unit test right below our ma
 #[cfg(test)]
 mod tests {
     use super::*;
-    use solidity::grammar::{SourceUnit};
+    use solidity::grammar::*;
 
     #[test]
     fn test_parse_empty() {
         let code = std::fs::read_to_string("./contracts/empty.sol").expect("Unable to read source file");
         let parsed = parse(code.as_str());
         assert!(parsed.is_ok());
-        assert_eq!(parsed.unwrap(), SourceUnit { parts: vec![] });
+        assert_eq!(parsed.unwrap(), SourceUnit { parts: vec![] } );
     }
 }
 ```
@@ -148,3 +150,13 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 If everything displayed correctly without any errors - congratulations!🎉. The boring boilerplate part is now over and the fun part is about to begin!
 
 In the next tutorial we're going to finish the Solidity parser and try to parse our contract. Stay tuned!
+
+Part 2:
+<HorizontalCard
+    title="Understanding Solidity Part 2: Parser and Grammar"
+    img="/tinysol_part2.png"
+    desc="This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀. Now to the fun part, we're going to continue defining our grammar..."
+    url="/blog/understanding-solidity-part-2"
+    target="_self"
+    badge=""
+/>
