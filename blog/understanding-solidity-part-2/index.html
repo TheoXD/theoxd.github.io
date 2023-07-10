@@ -58,7 +58,8 @@
       
       <div class="divider my-2"></div>
       
-    <p>This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀.  If you haven’t read the first part yet, you can do so <a href="/blog/understanding-solidity-part-1">here</a>.</p>
+    <p>This is the Part 2 of our tutorial series on how to build a Solidity parser and virtual machine in Rust 🦀.  If you haven’t read the first part yet, you can do so <a href="/blog/understanding-solidity-part-1">here</a>.
+If you wish to skip the boring boilerplate setup from previous tutorial you can download the template <a href="https://github.com/TheoXD/tinysol/archive/4ce2abfa27095c67af0424a853bb1c0ed4fda0f1.zip">here</a>.</p>
 <div class="rounded-lg bg-base-100 hover:shadow-xl transition ease-in-out hover:scale-[102%]">
   <a href="/blog/understanding-solidity-part-1" target="_self">
     <div class="hero-content flex-col md:flex-row">
@@ -443,6 +444,7 @@ Add the full source code of our <code>flipper.sol</code> contract to the <code>c
 <p>Now run the test</p>
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">cargo</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test_parse_flipper_contract</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--nocapture</span></span></code></pre>
 <p>If the test passes and you see a large struct being printed out, then congratunations! You’ve just built your first Solidity parser in Rust in less than 200 LOC 🎉
+If by any chance you feel stuck - here are project files for this tutorial part [here](If you wish to skip the boring boilerplate setup from previous tutorial you can download the template <a href="https://github.com/TheoXD/tinysol/archive/6ecf74c8afef3e4bf90a81a312d91bdda923995f.zip">here</a>.
 In the next tutorial we’re going to use this parsed output to generate assembly instructions and execute them in our own stack based virtual machine.</p>
 <p>Part 3:</p>
 <div class="rounded-lg bg-base-100 hover:shadow-xl transition ease-in-out hover:scale-[102%]">
