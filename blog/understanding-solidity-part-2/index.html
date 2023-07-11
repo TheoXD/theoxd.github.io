@@ -297,12 +297,20 @@ Do you remember when I send there were 4 mutability attrbutes? Well, I lied. The
 <span class="line"></span>
 <span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">enum</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">ParameterList</span><span style="color:#E1E4E8"> {</span></span>
-<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Param</span><span style="color:#E1E4E8">(</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">Params</span><span style="color:#E1E4E8">(</span></span>
 <span class="line"><span style="color:#E1E4E8">            #[</span><span style="color:#B392F0">rust_sitter</span><span style="color:#F97583">::</span><span style="color:#B392F0">leaf</span><span style="color:#E1E4E8">(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;(&quot;</span><span style="color:#E1E4E8">)] (),</span></span>
-<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Parameter</span><span style="color:#E1E4E8">&gt;,</span></span>
+<span class="line"><span style="color:#E1E4E8">            </span><span style="color:#B392F0">Option</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Params</span><span style="color:#E1E4E8">&gt;,</span></span>
 <span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;)&quot;</span><span style="color:#E1E4E8">)] ()</span></span>
 <span class="line"><span style="color:#E1E4E8">        )</span></span>
-<span class="line"><span style="color:#6A737D">        //TODO: capture multiple parameters</span></span>
+<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Params</span><span style="color:#E1E4E8"> {</span></span>
+<span class="line"><span style="color:#E1E4E8">        #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">repeat(non_empty </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> true)]</span></span>
+<span class="line"><span style="color:#E1E4E8">        #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">delimited(</span></span>
+<span class="line"><span style="color:#E1E4E8">            #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">leaf(text </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">&quot;,&quot;</span><span style="color:#E1E4E8">)] ()</span></span>
+<span class="line"><span style="color:#E1E4E8">        )]</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> params</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Vec</span><span style="color:#E1E4E8">&lt;</span><span style="color:#B392F0">Parameter</span><span style="color:#E1E4E8">&gt;</span></span>
 <span class="line"><span style="color:#E1E4E8">    }</span></span>
 <span class="line"></span>
 <span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
@@ -444,7 +452,7 @@ Add the full source code of our <code>flipper.sol</code> contract to the <code>c
 <p>Now run the test</p>
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">cargo</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test</span><span style="color:#E1E4E8"> </span><span style="color:#9ECBFF">test_parse_flipper_contract</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">--nocapture</span></span></code></pre>
 <p>If the test passes and you see a large struct being printed out, then congratunations! You’ve just built your first Solidity parser in Rust in less than 200 LOC 🎉
-If by any chance you feel stuck - here are project files for this tutorial part [here](If you wish to skip the boring boilerplate setup from previous tutorial you can download the template <a href="https://github.com/TheoXD/tinysol/archive/6ecf74c8afef3e4bf90a81a312d91bdda923995f.zip">here</a>.
+If by any chance you feel stuck - here are project files for this tutorial part <a href="/tinysol_part2.zip">here</a>.
 In the next tutorial we’re going to use this parsed output to generate assembly instructions and execute them in our own stack based virtual machine.</p>
 <p>Part 3:</p>
 <div class="rounded-lg bg-base-100 hover:shadow-xl transition ease-in-out hover:scale-[102%]">
