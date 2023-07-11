@@ -28,7 +28,7 @@ Part 1 and Part 2:
 />
 
 In the previous part we've written a Solidity grammar, or at least we've written enough to parse our example contract. Today we'll go one step further and make it actually run by writing our own stack-based virtual machine.
-If you somehow missed the previous tutorial - you can download the source code from [here](https://github.com/TheoXD/tinysol/archive/6ecf74c8afef3e4bf90a81a312d91bdda923995f.zip).
+If you somehow missed the previous tutorial - you can download the source code from [here](/tinysol_part2.zip).
 This part will involve a lot of Rust, but I'll gradually introduce new Rust concepts for those who are new to the language so that anyone reading it can follow along.
 ![Rust Book](/rust-book.png)
 
@@ -405,8 +405,8 @@ fn handle_contract_part(part: ContractPart, contract: &mut Contract) {
                 let (visibility, mutability) = handle_attrs(attr_list.clone());
                 
                 let mut returns = vec![];
-                if let Some(FunctionReturnParams::ParameterList(_, ParameterList::Param(_, Some(ret_param), _))) = ret_params.clone() {
-                    returns = vec![ret_param];
+                if let Some(FunctionReturnParams::ParameterList(_, ParameterList::Params(_, Some(ret_param), _))) = ret_params.clone() {
+                    returns = ret_param.params;
                 }
 
                 contract.functions.insert(
@@ -434,16 +434,21 @@ fn handle_statement(statement: Statement, contract: &mut Contract) -> Vec<OP> {
 }
 
 fn find_function_signature(name: String, params: ParameterList) -> String {
-    let mut params_str = "";
+    if let ParameterList::Params((), Some(p), ()) = params {
+        let params_string = p.params.iter().map(|param| {
+            match param.ty {
+                Expression::Type(Type::Bool(_)) => Some("bool"),
+                _ => None,
+            }
+        })
+        .collect::<Option<Vec<&str>>>().map(|v| v.join(",")).unwrap_or_default();
 
-    if let ParameterList::Param((), Some(p), ()) = params {
-        params_str = match p.ty {
-            Expression::Type(Type::Bool(_)) => "bool",
-            _ => "",
-        };
+        format!("{}({})", name, params_str)
+        //get_func_sig(format!("{}({})", name, params_string))
+    } else {
+        format!("{}()", name)
+        //get_func_sig(format!("{}()", name))
     }
-
-    format!("{}({})", name, params_str)
 }
 
 pub fn get_func_sig(in_str: String) -> String {
@@ -547,8 +552,12 @@ use keccak_hash::{keccak};
 ```rust
 fn find_function_signature(name: String, params: ParameterList) -> String {
     ...
-    //format!("{}({})", name, params_str)
-    get_func_sig(format!("{}({})", name, params_str))  // <-- Add this
+        //format!("{}({})", name, params_str)
+        get_func_sig(format!("{}({})", name, params_string))   // <-- Add this
+    } else {
+        //format!("{}()", name)
+        get_func_sig(format!("{}()", name))  // <-- Add this
+    }
 }
 
 pub fn get_func_sig(in_str: String) -> String {
@@ -675,5 +684,5 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; fini
 
 And that is it for now! I hope this tutorial was educational and you have actually learned a thing or two about Solidity, EVM or Rust itself.
 Next time we're going to revisit function arguments, calldata, constructors, getters and more.
-You can also download the entire project [here](https://github.com/TheoXD/tinysol/archive/ae646a588b808fd8f404c94aaa5d3c13c5c2bfbc.zip)
+You can also download the entire project [here](https://github.com/TheoXD/tinysol/archive/eaee99de2224e20be16635273882f3d1038f377a.zip)
 Until next time!
