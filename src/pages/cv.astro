@@ -5,6 +5,7 @@ import HorizontalCard from "../components/HorizontalCard.astro";
 
 import { getEntry } from 'astro:content';
 
+const proj10 = await getEntry('projects', 'proj10');
 const proj1 = await getEntry('projects', 'proj1');
 const proj1a = await getEntry('projects', 'proj1a');
 const proj2 = await getEntry('projects', 'proj2');
@@ -18,46 +19,48 @@ const projx5 = await getEntry('projects', 'projx5');
 
 <BaseLayout title="Theo\'s Resume">
   <div class="mb-5">
-    <div class="text-3xl w-full font-bold">Theo Hallenius (🇸🇪)</div>
+    <div class="text-3xl w-full font-bold">Theo Hallenius (UAE)</div>
   </div>
 
   <div class="mb-10 text-justify">
-    I am a Blockchain/Software/Game developer but I consider myself a generalist as I can do pretty much anything. I got involved with blockchain since 2017 and have been working for several prominent blockchain projects. I co-founded several blockchain companies with varying levels of success and have gained management experience as well. I'm a big advocate for privacy and decentralization and I believe that blockchain is the future, assuming this industry can still be saved.
+    I am a Blockchain/Software/Game developer but I consider myself a generalist as I can do pretty much anything. I got involved with blockchain since 2017 and have been working for several prominent blockchain projects. I founded several companies with varying levels of success and have gained management experience while doing so. I'm a big advocate for privacy and decentralization and I believe that blockchain is the future, assuming this industry can still be saved.
   </div>
 
   <div class="mb-5">
-    <div class="text-3xl w-full font-bold">Education</div>
-  </div>
-
-  <div class="time-line-container grid gap-4 mb-10">
-    <TimeLineElement
-      title="Studied Technical Artist"
-      subtitle="Sep 2015 to Jun 2017 at Blekinge Institute of Technology, Karlskrona, Sweden."
-    />
-    <TimeLineElement
-      title="Studied Civil Engineering in Game and Software development"
-      subtitle="Sep 2012 to Jun 2015 at Blekinge Institute of Technology, Karlskrona, Sweden."
-    />
-    <TimeLineElement
-      title="Studied Game Graphics and Animation"
-      subtitle="Sep 2009 to Jun 2012 at Törnströmska Gymnasiet in Karlskrona, Sweden. And no, the world didn't end by the time I graduated xD"
-    >
-      This was the first of it's kind education in Sweden and I was among the first students to get selected. Now it's considered a prestige education and student from all over Sweden apply to this school. I still remember that time I've written my own render farm in Python to use all 20+ Macs to render animations after school hours.
-      <HorizontalCard
-      title={projx5.data.title}
-      img={projx5.data.heroImage}
-      desc={projx5.data.description}
-      url={projx5.data.url}
-      badge={projx5.data.badge}
-    />
-    </TimeLineElement>
-  </div>
-
-  <div class="mb-5">
-    <div class="text-3xl w-full font-bold">Professional Experience</div>
+    <div class="text-3xl w-full font-bold">Current Positions</div>
   </div>
 
   <div class="time-line-container mb-10">
+    <TimeLineElement
+      title="⭐ Founder of Encribe L.L.C-FZ"
+      subtitle="From Mar 2024 till Now at Encribe L.L.C-FZ, United Arab Emirates"
+    >
+      Founded Encribe L.L.C-FZ, a Dubai based AI startup, with a goal to protect the internet against AI.
+      <HorizontalCard
+      title={proj10.data.title}
+      img={proj10.data.heroImage}
+      desc={proj10.data.description}
+      url={proj10.data.url}
+      badge={proj10.data.badge}
+    />
+    </TimeLineElement>
+
+    <TimeLineElement
+      title='⭐ Protocol Engineer at <a href="https://inco.org" target="_blank"><img src="/inco.svg" alt="Inco" class="inline h-5 align-middle" /></a>'
+      subtitle="From Sep 2023 till Now at Inco, Remote"
+    >
+      As of Jan 2024 I have been working fulltime on several products at Inco, but mainly on the <a href="https://docs.inco.org/introduction" target="_blank">Inco Lightning</a> project that has now reached production 🎉Mainnet on Base as of June 15th 2026. Responsibilities ranging from protocol design, prototyping, implementation, hot fixes and going through security audit. I've been working primarily in Go, Solidity, Typescript and Rust, shipping production ready code and features, bug fixes and fixes for audit findings.
+    </TimeLineElement>
+
+    <div class="flex">
+      <div class="education__time w-4">
+        <span class="education__line bg-primary block h-full w-[2px] translate-x-[7px]"></span>
+      </div>
+      <div class="experience__data bd-grid px-5 py-5">
+        <div class="text-3xl w-full font-bold">Past Professional Experience</div>
+      </div>
+    </div>
+
     <TimeLineElement
       title="⭐ Co-Founded Rhonix Labs FZE"
       subtitle="From Nov 2022 to Apr 2023 at Rhonix Labs, UAE"
@@ -175,10 +178,13 @@ const projx5 = await getEntry('projects', 'projx5');
     <div class="text-3xl w-full font-bold">Skills</div>
   </div>
 
-  <ul class="list-disc md:columns-5 columns-2 mx-6">
+  <ul class="list-disc md:columns-4 columns-2 mx-6">
     <li>🦀 Rust</li>
-    <li>Javascript</li>
-    <li>Typescript</li>
+    <li>Golang</li>
+    <li>SpacetimeDB</li>
+    <li>Cryptography</li>
+    <li>FHE</li>
+    <li>Typescript/Javascript</li>
     <li>Python</li>
     <li>C/C++</li>
     <li>Rholang</li>
@@ -192,11 +198,40 @@ const projx5 = await getEntry('projects', 'projx5');
     <li>Scala</li>
     <li>Clip Studio</li>
     <li>Substance Painter</li>
+    <li>Iroh P2P</li>
   </ul>
+
+  <div class="mb-5 mt-10">
+    <div class="text-3xl w-full font-bold">Education</div>
+  </div>
+
+  <div class="time-line-container grid gap-4 mb-10">
+    <TimeLineElement
+      title="Studied Technical Artist"
+      subtitle="Sep 2015 to Jun 2017 at Blekinge Institute of Technology, Karlskrona, Sweden."
+    />
+    <TimeLineElement
+      title="Studied Civil Engineering in Game and Software development"
+      subtitle="Sep 2012 to Jun 2015 at Blekinge Institute of Technology, Karlskrona, Sweden."
+    />
+    <TimeLineElement
+      title="Studied Game Graphics and Animation"
+      subtitle="Sep 2009 to Jun 2012 at Törnströmska Gymnasiet in Karlskrona, Sweden. And no, the world didn't end by the time I graduated xD"
+    >
+      This was the first of it's kind education in Sweden and I was among the first students to get selected. Now it's considered a prestige education and student from all over Sweden apply to this school. I still remember that time I've written my own render farm in Python to use all 20+ Macs to render animations after school hours.
+      <HorizontalCard
+      title={projx5.data.title}
+      img={projx5.data.heroImage}
+      desc={projx5.data.description}
+      url={projx5.data.url}
+      badge={projx5.data.badge}
+    />
+    </TimeLineElement>
+  </div>
 
   <div class="mt-24 mb-24">
     <a href="/TheoHallenius_CV6.pdf" target="_blank" class="btn ml-5">Download my CV as PDF</a>
-    <a href="/projects" target="_blank" class="btn btn-outline ml-5">See all my 💩 projects</a>
+    <a href="/projects" target="_blank" class="btn btn-outline ml-5">See all my projects</a>
   </div>
 
 </BaseLayout>

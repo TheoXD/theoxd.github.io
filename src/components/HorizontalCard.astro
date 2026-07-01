@@ -1,6 +1,7 @@
 ---
 const { title, img, desc, url, badge, tags, target = "_blank" } = Astro.props;
 import { Image } from "@astrojs/image/components";
+const isVideo = typeof img === "string" && img.endsWith(".webm");
 ---
 
 <div
@@ -9,21 +10,41 @@ import { Image } from "@astrojs/image/components";
   <a href={url} target={target}>
     <div class="hero-content flex-col md:flex-row">
       {
-        img && (
-          <Image
-            src={img}
-            aspectRatio="16:9"
-            width={750}
-            format="webp"
-            alt={title}
-            class="max-w-full md:max-w-[13rem] rounded-lg"
-          />
-        )
+        img &&
+          (isVideo ? (
+            <video
+              src={img}
+              autoplay
+              loop
+              muted
+              playsinline
+              class="max-w-full md:max-w-[13rem] rounded-lg aspect-video object-cover"
+            />
+          ) : (
+            <Image
+              src={img}
+              aspectRatio="16:9"
+              width={750}
+              format="webp"
+              alt={title}
+              class="max-w-full md:max-w-[13rem] rounded-lg"
+            />
+          ))
       }
       <div class="grow w-full">
         <h1 class="text-xl font-bold">
           {title}
-          {badge && <div class="badge badge-secondary mx-2">{badge}</div>}
+          {
+            badge &&
+              (badge === "LIVE" ? (
+                <div class="badge mx-2 bg-red-600 text-white border-red-600 gap-1 -translate-y-0.5 align-middle">
+                  <span class="inline-block w-2 h-2 rounded-full bg-white animate-pulse" />
+                  {badge}
+                </div>
+              ) : (
+                <div class="badge badge-secondary mx-2">{badge}</div>
+              ))
+          }
         </h1>
         <p class="py-1 text-1xl">{desc}</p>
         <div class="card-actions justify-end">
