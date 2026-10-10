@@ -97,7 +97,7 @@ I’ll try to keep the naming convention as close to Solang’s as possible.</p>
 <p>I’d also recommend installing the following extensions for VSCode:
 <img src="/rust-analyzer.JPG" alt="rust-analyzer"/></p>
 <h1 id="parser">Parser</h1>
-<p>Parsing is a pre-processing step of converting readable source code into an <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree (AST)</a>. To parse solidity source code we’ll need <a href="https://tree-sitter.github.io/tree-sitter/">Tree-sitter</a> which is a parser generator that can parse any context-free grammar. For this project we’re going to use a crate called <a href="https://crates.io/crates/rust-sitter">rust-sitter</a> to get started even faster, so let’s not waste any time and add it to our dependencies in <code>Cargo.toml</code>:</p>
+<p>Parsing is a pre-processing step of converting readable source code into an <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree (AST)</a>. To parse solidity source code we’ll need <a href="https://tree-sitter.github.io/tree-sitter/">Tree-sitter</a> which is a parser generator that can parse any context-free grammar. For this project we’re going to use a crate called <a href="https://crates.io/crates/rust-sitter">rust-sitter</a> to get started even faster, so let’s not waste any time and add it to our dependencies in <code>Cargo.toml</code> under <code>[dependencies]</code> :</p>
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">[</span><span style="color:#B392F0">dependencies</span><span style="color:#E1E4E8">]</span></span>
 <span class="line"><span style="color:#E1E4E8">rust-sitter = </span><span style="color:#9ECBFF">&quot;0.3.4&quot;</span></span>
 <span class="line"></span>
@@ -110,9 +110,7 @@ Let’s start by defining our module with our entry node:</p>
 <span class="line"></span>
 <span class="line"><span style="color:#E1E4E8">    #[rust_sitter</span><span style="color:#F97583">::</span><span style="color:#E1E4E8">language]</span></span>
 <span class="line"><span style="color:#E1E4E8">    #[derive(</span><span style="color:#B392F0">PartialEq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Eq</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Debug</span><span style="color:#E1E4E8">, </span><span style="color:#B392F0">Clone</span><span style="color:#E1E4E8">)]</span></span>
-<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8"> {</span></span>
-<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> parts</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">Vec</span><span style="color:#E1E4E8">&lt;&gt;</span></span>
-<span class="line"><span style="color:#E1E4E8">    }</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">pub</span><span style="color:#E1E4E8"> </span><span style="color:#F97583">struct</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8">;</span></span>
 <span class="line"></span>
 <span class="line"><span style="color:#6A737D">    // Grammar definitions go here</span></span>
 <span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
@@ -146,20 +144,20 @@ By now your project structure should look like this:
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#B392F0">Ok(</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#B392F0">SourceUnit,</span></span>
 <span class="line"><span style="color:#E1E4E8">)</span></span></code></pre>
+<p>You might also see some C compiler warnings coming from the generated parser. Those are harmless and can be ignored.</p>
 <p>The parse function returns a <code>Result</code> enum type which can be either <code>Ok</code> or <code>Err</code>. This is the way we do error handling in rust, it forces us to think whether a function can error out or not, way better than dealing with exceptions.</p>
 <h1 id="unit-tests">Unit tests</h1>
 <p>For the sake of completion let’s also add our first unit test right below our main function:</p>
 <pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0"><code><span class="line"><span style="color:#E1E4E8">#[cfg(test)]</span></span>
 <span class="line"><span style="color:#F97583">mod</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">tests</span><span style="color:#E1E4E8"> {</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">use</span><span style="color:#E1E4E8"> </span><span style="color:#79B8FF">super</span><span style="color:#F97583">::*</span><span style="color:#E1E4E8">;</span></span>
-<span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">use</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">solidity</span><span style="color:#F97583">::</span><span style="color:#B392F0">grammar</span><span style="color:#F97583">::*</span><span style="color:#E1E4E8">;</span></span>
 <span class="line"></span>
 <span class="line"><span style="color:#E1E4E8">    #[test]</span></span>
 <span class="line"><span style="color:#E1E4E8">    </span><span style="color:#F97583">fn</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">test_parse_empty</span><span style="color:#E1E4E8">() {</span></span>
 <span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> code </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">std</span><span style="color:#F97583">::</span><span style="color:#B392F0">fs</span><span style="color:#F97583">::</span><span style="color:#B392F0">read_to_string</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;./contracts/empty.sol&quot;</span><span style="color:#E1E4E8">)</span><span style="color:#F97583">.</span><span style="color:#B392F0">expect</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">&quot;Unable to read source file&quot;</span><span style="color:#E1E4E8">);</span></span>
 <span class="line"><span style="color:#E1E4E8">        </span><span style="color:#F97583">let</span><span style="color:#E1E4E8"> parsed </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">parse</span><span style="color:#E1E4E8">(code</span><span style="color:#F97583">.</span><span style="color:#B392F0">as_str</span><span style="color:#E1E4E8">());</span></span>
 <span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">assert!</span><span style="color:#E1E4E8">(parsed</span><span style="color:#F97583">.</span><span style="color:#B392F0">is_ok</span><span style="color:#E1E4E8">());</span></span>
-<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">assert_eq!</span><span style="color:#E1E4E8">(parsed</span><span style="color:#F97583">.</span><span style="color:#B392F0">unwrap</span><span style="color:#E1E4E8">(), </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8"> { parts</span><span style="color:#F97583">:</span><span style="color:#E1E4E8"> </span><span style="color:#B392F0">vec!</span><span style="color:#E1E4E8">[] } );</span></span>
+<span class="line"><span style="color:#E1E4E8">        </span><span style="color:#B392F0">assert_eq!</span><span style="color:#E1E4E8">(parsed</span><span style="color:#F97583">.</span><span style="color:#B392F0">unwrap</span><span style="color:#E1E4E8">(), </span><span style="color:#B392F0">SourceUnit</span><span style="color:#E1E4E8">);</span></span>
 <span class="line"><span style="color:#E1E4E8">    }</span></span>
 <span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
 <p>If you run <code>cargo test</code> it should say:</p>
