@@ -37,11 +37,12 @@ This part will involve a lot of Rust, but I'll gradually introduce new Rust conc
 EVM is a **stack based** virtual machine. It means that all operations occur on the stack data structure. While queues are FIFO (first in first out), stacks are LIFO (last in first out). If you don't know what a queue is, you've probably been in one.
 
 
-In essence EVM stack is just an array of unsigned 256bit integers sometimes referred to as `words`. The stack is limited to 1024 words in total with 32 bytes each, so that's a limit of 32 MB.
-Since Rust doesn't natively support 256bit integers, we'll use the `ethnum` crate. Let's add it to our dependency:
+In essence EVM stack is just an array of unsigned 256bit integers sometimes referred to as `words`. The stack is limited to 1024 words in total with 32 bytes each, so that's a limit of 32 KB.
+Since Rust doesn't natively support 256bit integers, we'll use the `ethnum` crate. Let's add it to the `[dependencies]` section of our `Cargo.toml`:
 ```toml
 [dependencies]
-ethnum = "1.3.2"
+rust-sitter = "0.3.4"
+ethnum = "1.3.2" # <--- Add this
 ```
 
 Create a new module `tinyvm.rs` inside our `src/` folder and import the U256 type as well as types from our grammar:
@@ -50,11 +51,12 @@ use ethnum::U256;
 use crate::solidity::grammar::*;
 ```
 
-And our newly created module to our `main.rs`:
+Then add our newly created module to our `main.rs`:
 ```rust
 pub mod solidity;
 pub mod tinyvm; // <--- Add this
 use crate::tinyvm::*; // <--- Add this
+use crate::solidity::grammar::*;
 ```
 
 Now go back to our newly created `tinyvm.rs` module and declare a struct that will hold our stack:
@@ -185,7 +187,7 @@ impl<'a> VM<'a> {
 Here we iterate over the instruction set and use Rust's pattern matching syntax to match each instruction. Kinda like switch case expression in other languages but way more powerful.
 For every new VM instance we pass it a set of instructions to execute as an argument, and when we run it we pass it a `ContractStorage` to execute on, returning modified contract storage.
 
-Now let's implement the OPcodes:
+Now let's implement the OPcodes by replacing the `todo!()` arms inside `run` with the following. Any `todo!()` arm left behind will panic when that OPcode runs:
 ```rust
                 OP::PUSH32(word) => {
                     self.stack.push32(word);
@@ -305,7 +307,7 @@ pub enum FuncMutability {
 > Enum variants annotated with #[default] will become default values unless explicitly set.
 
 Here we've created a `Contract` struct to hold our contract data, and a `Function` struct to hold our instructions as well as function attributes.
-You might also want to import `HashMap` at the top of the file:
+Don't forget to import `HashMap` at the top of the file, otherwise it won't compile:
 ```rust
 use std::collections::HashMap;
 ```
@@ -421,7 +423,7 @@ fn handle_contract_part(part: ContractPart, contract: &mut Contract) {
                 );
             }
         },
-        ContractPart::VariableDef...
+        ... //<-- Keep the VariableDefinition and ConstructorDefinition
     }
 }
 
@@ -443,7 +445,7 @@ fn find_function_signature(name: String, params: ParameterList) -> String {
         })
         .collect::<Option<Vec<&str>>>().map(|v| v.join(",")).unwrap_or_default();
 
-        format!("{}({})", name, params_str)
+        format!("{}({})", name, params_string)
         //get_func_sig(format!("{}({})", name, params_string))
     } else {
         format!("{}()", name)
@@ -494,7 +496,7 @@ fn handle_attrs(attr_list: Vec<Option<FunctionAttribute>>) -> (FuncVisibility, F
 
 So far we've built each individual piece of our VM, but we still need a way to interact with it. We do so by giving it calldata.
 
-Let's implement a `call` function on `Contract` that takes calldata as hex and returns a a tuple containing a new modified contract and return the top most value from the stack:
+Let's implement a `call` function on `Contract` that takes calldata as hex and returns a a tuple containing a new modified contract and return the top most value from the stack. Replace the existing `impl Contract` block with:
 ```rust
 impl Contract {
     pub fn new(name: String) -> Self {
@@ -538,9 +540,12 @@ impl Contract {
 
 # Calling functions by hash
 
-In EVM you have to call functions by their signature hash. Add a new dependency to our Cargo.toml:
+In EVM you have to call functions by their signature hash. Add a new dependency to the `[dependencies]` section of our `Cargo.toml` (not `[build-dependencies]`):
 ```toml
-keccak-hash = "0.10.0"
+[dependencies]
+rust-sitter = "0.3.4"
+ethnum = "1.3.2"
+keccak-hash = "0.10.0" # <--- Add this
 ```
 
 Now import the hash function at the top of `tinyvm.rs`:
@@ -549,10 +554,11 @@ Now import the hash function at the top of `tinyvm.rs`:
 use keccak_hash::{keccak};
 ```
 
+Then update `find_function_signature` and `get_func_sig` so that the signatures get hashed. Make sure to comment out the old `format!` lines, otherwise it won't compile:
 ```rust
 fn find_function_signature(name: String, params: ParameterList) -> String {
     ...
-        //format!("{}({})", name, params_str)
+        //format!("{}({})", name, params_string)
         get_func_sig(format!("{}({})", name, params_string))   // <-- Add this
     } else {
         //format!("{}()", name)
@@ -634,7 +640,7 @@ fn handle_expression(expr: Expression, contract: &mut Contract) -> Vec<OP> {
 }
 ```
 
-Assuming you have been following the steps correctly, you should now have a working VM that can toggle our state variable. Let's test whether we're able to toggle the state variable by creating a new unit test:
+Assuming you have been following the steps correctly, you should now have a working VM that can toggle our state variable. Let's test whether we're able to toggle the state variable by adding a new unit test to our `main.rs`:
 
 ```rust
     #[test]
@@ -679,7 +685,7 @@ The output should be:
 Return value: [BoolLiteral(true)]
 test tests::test_call_flipper_contract_flip ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.02s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.02s
 ```
 
 And that is it for now! I hope this tutorial was educational and you have actually learned a thing or two about Solidity, EVM or Rust itself.

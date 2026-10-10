@@ -24,7 +24,7 @@ If you wish to skip the boring boilerplate setup from previous tutorial you can 
 # Parsing contract
 
 Now let's jump straight to the fun part and continue defining our grammar in `src/solidity.rs`.
-We begin by filtering out spaces and newlines from our source code. Add the following structs to our module:
+We begin by filtering out spaces and newlines from our source code. Add the following structs inside our `grammar` module:
 ```rust
     #[rust_sitter::extra]
     struct Whitespace {
@@ -89,7 +89,12 @@ contract flipper {
 }
 ```
 
-Add a new unit test to our `main.rs` with the following code:
+Since `SourceUnit` now has a `parts` field, the `test_parse_empty` test from Part 1 won't compile anymore. Update its assertion in `main.rs` to:
+```rust
+        assert_eq!(parsed.unwrap(), SourceUnit { parts: vec![] } );
+```
+
+Then add a new unit test to our `main.rs` with the following code:
 ```rust
     #[test]
     fn test_parse_empty_contract() {
@@ -152,7 +157,7 @@ The target contract we want to parse has just one variable declaration, 2 functi
 ```javascript
 bool private value;
 ```
-Our one variable in question is public and is of type bool. The keyword `public` is an access attribute dictating whether variable is readable from outside the contract. If it's `public` - compiler also creates a getter function for us. There are four visibility attributes in Solidity: `public`, `private`, `internal` and `external`, the latter one only applying to functions. The default visibility is `internal`, meaning it's only limited to the current contract it's declared in. Let's add them to our grammar as `Visibility` enum:
+Our one variable in question is private and is of type bool. The keyword `public` is an access attribute dictating whether variable is readable from outside the contract. If it's `public` - compiler also creates a getter function for us. There are four visibility attributes in Solidity: `public`, `private`, `internal` and `external`, the latter one only applying to functions. The default visibility is `internal`, meaning it's only limited to the current contract it's declared in. Let's add them to our grammar as `Visibility` enum:
 
 ```rust
     #[derive(PartialEq, Eq, Debug, Clone)]
@@ -410,6 +415,7 @@ Constructors are special functions executed only once when the contract is being
 ```rust
     #[derive(PartialEq, Eq, Debug, Clone)]
     pub enum ContractPart {
+        ...
         FunctionDefinition(
             ...
         ),

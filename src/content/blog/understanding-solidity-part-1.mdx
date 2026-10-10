@@ -59,7 +59,7 @@ I'd also recommend installing the following extensions for VSCode:
 
 # Parser
 
-Parsing is a pre-processing step of converting readable source code into an [Abstract Syntax Tree (AST)](https://en.wikipedia.org/wiki/Abstract_syntax_tree). To parse solidity source code we'll need [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) which is a parser generator that can parse any context-free grammar. For this project we're going to use a crate called [rust-sitter](https://crates.io/crates/rust-sitter) to get started even faster, so let's not waste any time and add it to our dependencies in `Cargo.toml`:
+Parsing is a pre-processing step of converting readable source code into an [Abstract Syntax Tree (AST)](https://en.wikipedia.org/wiki/Abstract_syntax_tree). To parse solidity source code we'll need [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) which is a parser generator that can parse any context-free grammar. For this project we're going to use a crate called [rust-sitter](https://crates.io/crates/rust-sitter) to get started even faster, so let's not waste any time and add it to our dependencies in `Cargo.toml` under `[dependencies]` :
 ```toml 
 [dependencies]
 rust-sitter = "0.3.4"
@@ -76,9 +76,7 @@ pub mod grammar {
 
     #[rust_sitter::language]
     #[derive(PartialEq, Eq, Debug, Clone)]
-    pub struct SourceUnit {
-        pub parts: Vec<>
-    }
+    pub struct SourceUnit;
 
     // Grammar definitions go here
 }
@@ -122,6 +120,8 @@ Ok(
     SourceUnit,
 )
 ```
+You might also see some C compiler warnings coming from the generated parser. Those are harmless and can be ignored.
+
 The parse function returns a `Result` enum type which can be either `Ok` or `Err`. This is the way we do error handling in rust, it forces us to think whether a function can error out or not, way better than dealing with exceptions.
 
 # Unit tests
@@ -131,14 +131,13 @@ For the sake of completion let's also add our first unit test right below our ma
 #[cfg(test)]
 mod tests {
     use super::*;
-    use solidity::grammar::*;
 
     #[test]
     fn test_parse_empty() {
         let code = std::fs::read_to_string("./contracts/empty.sol").expect("Unable to read source file");
         let parsed = parse(code.as_str());
         assert!(parsed.is_ok());
-        assert_eq!(parsed.unwrap(), SourceUnit { parts: vec![] } );
+        assert_eq!(parsed.unwrap(), SourceUnit);
     }
 }
 ```
