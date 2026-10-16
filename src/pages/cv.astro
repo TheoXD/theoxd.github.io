@@ -6,6 +6,7 @@ import HorizontalCard from "../components/HorizontalCard.astro";
 import { getEntry } from 'astro:content';
 
 const proj10 = await getEntry('projects', 'proj10');
+const solbend = await getEntry('projects', 'solbend');
 const proj1 = await getEntry('projects', 'proj1');
 const proj1a = await getEntry('projects', 'proj1a');
 const proj2 = await getEntry('projects', 'proj2');
@@ -18,8 +19,14 @@ const projx5 = await getEntry('projects', 'projx5');
 ---
 
 <BaseLayout title="Theo\'s Resume">
-  <div class="mb-5">
-    <div class="text-3xl w-full font-bold">Theo Hallenius (UAE)</div>
+  <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+    <div class="text-3xl font-bold">Theo Hallenius (UAE)</div>
+    <a href="/TheoHallenius_CV7.pdf" target="_blank" class="btn gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+      </svg>
+      Download my CV as PDF
+    </a>
   </div>
 
   <div class="mb-10 text-justify">
@@ -27,7 +34,7 @@ const projx5 = await getEntry('projects', 'projx5');
   </div>
 
   <div class="mb-5">
-    <div class="text-3xl w-full font-bold">Current Positions</div>
+    <div class="text-3xl w-full font-bold">Current Position</div>
   </div>
 
   <div class="time-line-container mb-10">
@@ -35,7 +42,7 @@ const projx5 = await getEntry('projects', 'projx5');
       title='⭐ Founder of Encribe L.L.C-FZ <a href="https://encribe.com" target="_blank"><img src="/encribe2.svg" alt="Encribe" class="inline h-5 align-middle -translate-y-0.5" /></a>'
       subtitle="From Mar 2024 till Now at Encribe L.L.C-FZ, United Arab Emirates"
     >
-      Founded Encribe L.L.C-FZ, a Dubai based AI startup, with a goal to protect the internet against AI.
+      Founded Encribe L.L.C-FZ, a Dubai based AI startup, with a goal to protect the internet against AI slop.
       <HorizontalCard
       title={proj10.data.title}
       img={proj10.data.heroImage}
@@ -43,15 +50,13 @@ const projx5 = await getEntry('projects', 'projx5');
       url={proj10.data.url}
       badge={proj10.data.badge}
     />
-    </TimeLineElement>
-
-    <TimeLineElement
-      title='⭐ Protocol Engineer at <a href="https://inco.org" target="_blank"><img src="/inco.svg" alt="Inco" class="inline h-5 align-middle" /></a>'
-      subtitle="From Sep 2023 till Oct 2026 at Inco, Remote"
-    >
-      As of Jan 2024 I had pleasure working fulltime on several products at Inco, but mainly on the <a href="https://docs.inco.org/introduction" target="_blank">Inco Lightning</a> project that reached production 🎉Mainnet on Base as of June 15th 2026.
-      <br /><br />
-      Responsibilities ranged from protocol design, prototyping, implementation, hot fixes and going through security audit. I've been working primarily in Go, Solidity, Typescript and Rust, shipping production ready code and features, bug fixes and security fixes for audit findings.
+      <HorizontalCard
+      title={solbend.data.title}
+      img={solbend.data.heroImage}
+      desc={solbend.data.description}
+      url={solbend.data.url}
+      badge={solbend.data.badge}
+    />
     </TimeLineElement>
 
     <div class="flex">
@@ -64,10 +69,19 @@ const projx5 = await getEntry('projects', 'projx5');
     </div>
 
     <TimeLineElement
+      title='⭐ Protocol Engineer at <a href="https://inco.org" target="_blank"><img src="/inco.svg" alt="Inco" class="inline h-5 align-middle" /></a>'
+      subtitle="From Sep 2023 to Oct 2026 at Inco, Remote"
+    >
+      As of Jan 2024 I had pleasure working fulltime on several products at Inco, but mainly on the <a href="https://docs.inco.org/introduction" target="_blank">Inco Lightning</a> project that reached production 🎉Mainnet on Base as of June 15th 2026.
+      <br /><br />
+      Responsibilities ranged from protocol design, prototyping, implementation, hot fixes and going through security audit. I worked primarily in Go, Solidity, Typescript and Rust, shipping production ready code and features, bug fixes and security fixes for audit findings.
+    </TimeLineElement>
+
+    <TimeLineElement
       title="⭐ Co-Founded Rhonix Labs FZE"
       subtitle="From Nov 2022 to Apr 2023 at Rhonix Labs, UAE"
     >
-      Co-Founded <a href="rhonix.io" target="_blank">Rhonix Labs FZE</a>, a Dubai company with a goal to keep the RChain technology alive and continue it's development in a middle of a crypto bloodbath. It now employs several key developers from the previous project and is working on completing the Scala client.
+      Co-Founded <a href="rhonix.io" target="_blank">Rhonix Labs FZE</a>, a Dubai company with a goal to keep the RChain technology alive and continue it's development in a middle of a crypto bloodbath. It employed several key developers from the previous project and was working on completing the Scala client.
       <HorizontalCard
       title={proj1.data.title}
       img={proj1.data.heroImage}
@@ -232,7 +246,6 @@ const projx5 = await getEntry('projects', 'projx5');
   </div>
 
   <div class="mt-24 mb-24">
-    <a href="/TheoHallenius_CV6.pdf" target="_blank" class="btn ml-5">Download my CV as PDF</a>
     <a href="/projects" target="_blank" class="btn btn-outline ml-5">See all my projects</a>
   </div>
 

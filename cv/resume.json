@@ -1,0 +1,171 @@
+{
+  "name": "Theo Hallenius",
+  "title": "Blockchain/ML/Software Engineer",
+  "photo": "/profile.jpg",
+  "contact": ["UAE", "theo.hallenius@gmail.com", "theoxd.github.io", "github.com/TheoXD", "linkedin.com/in/theo-hallenius", "artstation.com/theoxd"],
+  "summary": "Blockchain and software engineer and a generalist at heart. Involved in blockchain since 2017, most recently shipping Inco Lightning to mainnet. Founded several companies and gained management experience along the way. Big advocate for privacy and decentralization.",
+  "sections": [
+    {
+      "heading": "Experience",
+      "entries": [
+        {
+          "title": "Founder at Encribe L.L.C-FZ",
+          "url": "https://encribe.com",
+          "logo": "encribe",
+          "date": "Mar 2024 - Present",
+          "location": "Dubai, UAE",
+          "bullets": [
+            "Founded a Dubai based AI startup with a goal to protect the internet against AI slop",
+            "Building Encribe, an office suite for humans only, verified by keyboard biometrics"
+          ],
+          "projects": [
+            {
+              "title": "Solbend formal verifier",
+              "url": "https://solbend.com",
+              "logo": "solbend",
+              "bullets": [
+                "Finds every way an attacker could gain control of a Solidity contract",
+                "Fully automatic formal verification with a proof or the exact line that breaks"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Protocol Engineer at Inco",
+          "url": "https://inco.org",
+          "logo": "inco",
+          "date": "Sep 2023 - Oct 2026",
+          "location": "Remote",
+          "bullets": [
+            "Worked mainly on Inco Lightning (docs.inco.org), live on Base mainnet since June 2026",
+            "Protocol design, prototyping, implementation, hot fixes and compliance",
+            "Shipped features, bug fixes and audit security fixes in Go, Solidity, TypeScript and Rust"
+          ]
+        },
+        {
+          "title": "Co-Founder at Rhonix Labs FZE",
+          "url": "https://rhonix.io",
+          "logo": "rhonix",
+          "date": "Nov 2022 - Apr 2023",
+          "location": "Dubai, UAE",
+          "bullets": [
+            "Co-founded a company to continue RChain development, employing key RChain developers",
+            "Made the Rhonix SDK for Godot, a no-code Solidity to Rholang transpiler of smart contracts for games"
+          ]
+        },
+        {
+          "title": "Developer at Tree of Wally Foundation",
+          "url": "https://airsprk.com",
+          "logo": "tow",
+          "date": "May 2022 - Aug 2022",
+          "bullets": [
+            "Built Airspark, an NFT marketplace for selling time, with Svelte, Ionic and Keystone 6"
+          ]
+        },
+        {
+          "title": "Board of Directors at RChain Cooperative",
+          "url": "https://rchain.coop",
+          "logo": "rchain",
+          "date": "Nov 2021 - Aug 2022",
+          "location": "Washington, USA",
+          "bullets": [
+            "Elected by the membership of a Layer 1 blockchain once valued at $870M market cap"
+          ]
+        },
+        {
+          "title": "Software Developer at RChain Publishing",
+          "url": "https://r-pub.com",
+          "logo": "rchain-publishing",
+          "date": "Aug 2021 - Aug 2022",
+          "location": "Washington, USA",
+          "bullets": [
+            "Built an NFT marketplace that later evolved into RDrive, a blockchain mounted as a drive"
+          ]
+        },
+        {
+          "title": "Gov. Committee Member at RChain Cooperative",
+          "url": "https://rchain.coop",
+          "logo": "rchain",
+          "date": "Feb 2020 - Aug 2022",
+          "bullets": [
+            "Advisory committee to the Board, and one of the first external mainnet validators"
+          ]
+        },
+        {
+          "title": "Creator of VoteID",
+          "url": "https://voteid.io",
+          "logo": "voteid",
+          "date": "Jul 2020",
+          "bullets": [
+            "Peer-to-peer anonymous voting app on the Berty protocol that tallies encrypted votes"
+          ]
+        },
+        {
+          "title": "Plugin Developer at Enjin Coin",
+          "url": "https://enjin.io",
+          "logo": "enjin",
+          "date": "Sep 2019 - Dec 2019",
+          "bullets": [
+            "Godot plugin for the Enjin Trusted Platform API to bring blockchain into games"
+          ]
+        },
+        {
+          "title": "Game Developer at Inner Q-ality LTD",
+          "logo": "inner-quality",
+          "date": "Jul 2019 - Aug 2019",
+          "location": "UK",
+          "bullets": [
+            "CubeSpawn Maker, a factory building puzzle game in Godot. Game logic, UI, music and art"
+          ]
+        },
+        {
+          "title": "Founder of MyEtherSports S.R.L.",
+          "url": "https://myethersports.com",
+          "logo": "myethersports",
+          "date": "Nov 2017",
+          "bullets": [
+            "Sports betting platform in Solidity with its own DAO governance and token"
+          ]
+        },
+        {
+          "title": "Volunteer System Administrator at Godot Engine",
+          "url": "https://godotengine.org",
+          "logo": "godot",
+          "date": "Sep 2015 - Feb 2016",
+          "bullets": [
+            "Helped set up the new website and migrated the phpBB forum with working links"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Education",
+      "entries": [
+        {
+          "title": "Technical Artist at Blekinge Institute of Technology",
+          "url": "https://www.bth.se",
+          "logo": "bth",
+          "date": "Sep 2015 - Jun 2017",
+          "location": "Karlskrona, Sweden"
+        },
+        {
+          "title": "Civil Engineering in Game and Software Development at BTH",
+          "url": "https://www.bth.se",
+          "logo": "bth",
+          "date": "Sep 2012 - Jun 2015",
+          "location": "Karlskrona, Sweden"
+        },
+        {
+          "title": "Game Graphics and Animation at Törnströmska Gymnasiet",
+          "logo": "tornstromska",
+          "date": "Sep 2009 - Jun 2012",
+          "location": "Karlskrona, Sweden"
+        }
+      ]
+    },
+    {
+      "heading": "Skills",
+      "text": "Rust · Go · Solidity · TypeScript · Python · C/C++ · Scala · Rholang · Cryptography · FHE · SpacetimeDB · Iroh P2P · Svelte · React · Ionic · Godot · Blender · Substance Painter · Clip Studio"
+    }
+  ]
+}

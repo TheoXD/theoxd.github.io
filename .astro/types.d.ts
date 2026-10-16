@@ -424,6 +424,13 @@ declare module 'astro:content' {
   collection: "projects";
   data: InferEntrySchema<"projects">
 } & { render(): Render[".md"] };
+"solbend.md": {
+	id: "solbend.md";
+  slug: "solbend";
+  body: string;
+  collection: "projects";
+  data: InferEntrySchema<"projects">
+} & { render(): Render[".md"] };
 "understanding_solidity.md": {
 	id: "understanding_solidity.md";
   slug: "understanding_solidity";
